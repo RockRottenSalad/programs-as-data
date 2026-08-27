@@ -6,9 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="src/Intro_ex12.fs" />
-    <Compile Include="src/Intro2.fs" />
     <Compile Include="src/Intro1.fs" />
+    <Compile Include="src/Exercise_1.fs" />
+    <Compile Include="src/Exercise_2.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
