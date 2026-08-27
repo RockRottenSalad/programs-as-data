@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/Intro_ex12.fs" />
+    <Compile Include="src/Intro2.fs" />
+    <Compile Include="src/Intro1.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>
