@@ -40,6 +40,11 @@ let e9 = Let([("z", CstI 3)], Let([("y", Prim("+", Var "z", CstI 1))], Prim("+",
 
 let e10 = Let([("z", Prim("+", Let([("x", CstI 4)], Prim("+", Var "x", CstI 5)), Var "x"))], Prim("*", Var "z", CstI 2))
 
+
+(* all are variables in the example below are bound *)
+let list_let_test_all_bound = Let(["a", CstI 2; "b", e1; "c", e5], Prim("+", Var "a", Prim("+", Var "b", Var "c")))
+(* e6 features unbound var "x" and "d" is also unbound *)
+let list_let_test_some_free = Let(["a", CstI 2; "b", e1; "c", e6 ], Prim("+", Prim("+", Var "d", Var "a"), Prim("+", Var "b", Var "c")))
 (* ---------------------------------------------------------------------- *)
 
 (* Evaluation of expressions with variables and bindings *)
@@ -86,7 +91,7 @@ let rec closedin (e : expr) (vs : string list) : bool =
     | Var x  -> List.exists (fun y -> x=y) vs
     | Let(erhs, ebody) -> 
       let vs1 = List.fold (fun acc (x, _) -> x :: acc) vs erhs
-      (List.forall (fun (_, body) -> closedin body vs) erhs) && closedin ebody vs1
+      List.forall (fun (_, body) -> closedin body vs) erhs && closedin ebody vs1
     | Prim(ope, e1, e2) -> closedin e1 vs && closedin e2 vs;;
 
 (* An expression is closed if it is closed in the empty environment *)
@@ -378,8 +383,9 @@ let rec scomp (e : expr) (cenv : stackvalue list) : sinstr list =
     match e with
     | CstI i -> [SCstI i]
     | Var x  -> [SVar (getindex cenv (Bound x))]
-    | Let(x, erhs, ebody) -> 
-          scomp erhs cenv @ scomp ebody (Bound x :: cenv) @ [SSwap; SPop]
+    | Let(erhs, ebody) -> 
+          let erhs_scomped, cenv' = List.fold (fun (scomp_acc, cenv_acc) (x, xbody) -> scomp xbody cenv @ scomp_acc, Bound x :: cenv_acc) ([], cenv) erhs
+          erhs_scomped @ scomp ebody cenv' @ [SSwap; SPop]
     | Prim("+", e1, e2) -> 
           scomp e1 cenv @ scomp e2 (Value :: cenv) @ [SAdd] 
     | Prim("-", e1, e2) -> 
