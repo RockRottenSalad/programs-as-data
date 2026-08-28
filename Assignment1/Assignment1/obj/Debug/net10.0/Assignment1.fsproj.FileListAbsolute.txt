@@ -1,0 +1,4 @@
+C:\Users\August\Desktop\ProgData\Assignment1\Assignment1\obj\Debug\net10.0\Assignment1.fsproj.AssemblyReference.cache
+C:\Users\August\Desktop\ProgData\Assignment1\Assignment1\obj\Debug\net10.0\Assignment1.AssemblyInfoInputs.cache
+C:\Users\August\Desktop\ProgData\Assignment1\Assignment1\obj\Debug\net10.0\Assignment1.AssemblyInfo.fs
+C:\Users\August\Desktop\ProgData\Assignment1\Assignment1\obj\Debug\net10.0\Assignment1.fsproj.CoreCompileInputs.cache
