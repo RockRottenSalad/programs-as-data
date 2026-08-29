@@ -45,6 +45,9 @@ let e10 = Let([("z", Prim("+", Let([("x", CstI 4)], Prim("+", Var "x", CstI 5)),
 let list_let_test_all_bound = Let(["a", CstI 2; "b", e1; "c", e5], Prim("+", Var "a", Prim("+", Var "b", Var "c")))
 (* e6 features unbound var "x" and "d" is also unbound *)
 let list_let_test_some_free = Let(["a", CstI 2; "b", e1; "c", e6 ], Prim("+", Prim("+", Var "d", Var "a"), Prim("+", Var "b", Var "c")))
+
+(* e6 features unbound var "x" and "d" is also unbound *)
+let list_x1_in_x2 = Let(["x1", CstI 1; "x2", Prim("+", Var "x1", CstI 1)], Prim("+", Prim("+", Var "x1", Var "x2"), Prim("+", Var "x2", Var "x1")))
 (* ---------------------------------------------------------------------- *)
 
 (* Evaluation of expressions with variables and bindings *)
@@ -59,7 +62,8 @@ let rec eval e (env : (string * int) list) : int =
     | CstI i            -> i
     | Var x             -> lookup env x 
     | Let(erhs, ebody) -> 
-      let vals = List.map (fun (x, erhs) -> (x, eval erhs env)) erhs
+//      let vals = List.map (fun (x, erhs) -> (x, eval erhs env)) erhs
+      let vals = List.fold (fun envAcc (x, erhs) ->  (x, eval erhs envAcc) :: envAcc) env erhs
       let env1 = vals @ env
       eval ebody env1
     | Prim("+", e1, e2) -> eval e1 env + eval e2 env
