@@ -22,6 +22,14 @@ public class Main{
         System.out.println(ex2.eval(env));
         System.out.println(ex3.eval(env));
         System.out.println(ex4.eval(env));
+        
+        Expr ex5 = new Mul(new Mul(new CstI(2), new Var("a")), new Mul(new CstI(11), new CstI(1)));
+        Expr ex6 = new Mul(new Mul(new CstI(0), new Var("a")), new Mul(new CstI(11), new CstI(1)));
+
+        System.out.println(ex3.simplify(env));
+        System.out.println(ex4.simplify(env));
+        System.out.println(ex5.simplify(env));
+        System.out.println(ex6.simplify(env));
     }
 }
 
