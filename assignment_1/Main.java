@@ -27,6 +27,7 @@ public class Main{
 
 abstract class Expr {
     public abstract int eval(Map<String, Integer> env);
+    public abstract Expr simplify(Map<String, Integer> env);
 }
 
     class Var extends Expr {
@@ -47,6 +48,12 @@ abstract class Expr {
             return env.get(value);
             //this will cause uncaught exceptions
         }
+
+
+        @Override
+        public Expr simplify(Map<String, Integer> env) {
+            return this;
+        }
     }
 
     class CstI extends Expr {
@@ -64,6 +71,11 @@ abstract class Expr {
         @Override
         public int eval(Map<String, Integer> env) {
             return value;
+        }
+
+        @Override
+        public Expr simplify(Map<String, Integer> env) {
+            return this;
         }
     }
 
@@ -93,6 +105,18 @@ abstract class Expr {
         public int eval(Map<String, Integer> env) {
             return e1.eval(env) - e2.eval(env);
         }
+
+        @Override
+        public Expr simplify(Map<String, Integer> env) {
+            Expr ex1 = e1.simplify(env);
+            Expr ex2 = e2.simplify(env);
+            if (ex2.eval(env) == 0) {
+                return ex1;
+            } else if (ex1.eval(env) == ex2.eval(env)){
+                return new CstI(0);
+            }
+            return new Sub(ex1, ex2);
+        }
     }
 
     class Add extends Binop {
@@ -103,6 +127,20 @@ abstract class Expr {
         @Override
         public int eval(Map<String, Integer> env) {
             return e1.eval(env) + e2.eval(env);
+        }
+
+        @Override
+        public Expr simplify(Map<String, Integer> env) {
+            Expr ex1 = e1.simplify(env);
+            Expr ex2 = e2.simplify(env);
+            if (ex1.eval(env) == 0) {
+                return ex2;
+            } else if (ex2.eval(env) == 0){
+                return ex1;
+            } else if (ex1.eval(env) == ex2.eval(env)){
+                return new CstI(0);
+            }
+            return new Add(ex1, ex2);
         }
     }
 
@@ -115,6 +153,22 @@ abstract class Expr {
         @Override
         public int eval(Map<String, Integer> env) {
             return e1.eval(env) * e2.eval(env);
+        }
+
+        @Override
+        public Expr simplify(Map<String, Integer> env) {
+            Expr ex1 = e1.simplify(env);
+            Expr ex2 = e2.simplify(env);
+            if (ex1.eval(env) == 1) {
+                return ex2;
+            } else if (ex2.eval(env) == 1){
+                return ex1;
+            } else if (ex1.eval(env) == 0){
+                return new CstI(0);
+            } else if (ex2.eval(env) == 0){
+                return new CstI(0);
+            }
+            return new Mul(ex1, ex2);
         }
     }
 
