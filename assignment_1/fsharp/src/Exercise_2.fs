@@ -57,16 +57,22 @@ let rec lookup env x =
     | []        -> failwith (x + " not found")
     | (y, v)::r -> if x=y then v else lookup r x;;
 
+(* CHANGED | 2.1 *)
 let rec eval e (env : (string * int) list) : int =
     match e with
     | CstI i            -> i
     | Var x             -> lookup env x 
     | Let(erhs, ebody) -> 
-//      let vals = List.map (fun (x, erhs) -> (x, eval erhs env)) erhs
-      let vals = List.fold (fun envAcc (x, erhs) ->  (x, eval erhs envAcc) :: envAcc) env erhs
-      let env1 = vals @ env
+      (* for each let binding with variable "x"
+        - evaluate the let binding with the accumulated environment thus far
+        - add the evaluated variable to the accumulated environment
+
+        The idea behind the accumulated env, is that this type of let binding should be supported:
+            "let a = 1, b = a + a in a + b"
+      *)
+      let env1 = List.fold (fun envAcc (x, erhs) ->  (x, eval erhs envAcc) :: envAcc) env erhs
       eval ebody env1
-    | Prim("+", e1, e2) -> eval e1 env + eval e2 env
+    | Prim("+", e1, e2) -> eval e1 env + eval e2 env (* Case for each supported binary operation *)
     | Prim("*", e1, e2) -> eval e1 env * eval e2 env
     | Prim("-", e1, e2) -> eval e1 env - eval e2 env
     | Prim _            -> failwith "unknown primitive";;
@@ -89,13 +95,21 @@ let rec mem x vs =
 (* Checking whether an expression is closed.  The vs is 
    a list of the bound variables.  *)
 
+(* CHANGED *)
 let rec closedin (e : expr) (vs : string list) : bool =
     match e with
     | CstI i -> true
     | Var x  -> List.exists (fun y -> x=y) vs
     | Let(erhs, ebody) -> 
-      let vs1 = List.fold (fun acc (x, _) -> x :: acc) vs erhs
-      List.forall (fun (_, body) -> closedin body vs) erhs && closedin ebody vs1
+       (* 
+        for each let binding with variable "x"
+        - Recursively check that the body of the let binding with the current accumulated environment is closed
+        - Add "x" to the accumulated environment
+       *)
+      let vs1, isClosedInLetBinding = List.fold (fun (vsAcc, result) (x, xbody) -> (x :: vsAcc, result && (closedin xbody vsAcc))) (vs, true) erhs
+      isClosedInLetBinding && closedin ebody vs1
+//      let vs1 = List.fold (fun acc (x, _) -> x :: acc) vs erhs
+      // List.forall (fun (_, body) -> closedin body vs) erhs && closedin ebody vs1
     | Prim(ope, e1, e2) -> closedin e1 vs && closedin e2 vs;;
 
 (* An expression is closed if it is closed in the empty environment *)
@@ -124,12 +138,16 @@ let rec remove env x =
 
 (* Naive substitution, may capture free variables: *)
 
+(* CHANGED *)
 let rec nsubst (e : expr) (env : (string * expr) list) : expr =
     match e with
     | CstI i -> e
     | Var x  -> lookOrSelf env x
     | Let(erhs, ebody) ->
+      (* Remove every variable defined in the let binding from env *)
       let newenv = List.fold (fun acc (x, _) -> remove acc x) env erhs
+
+      (* Perform each subst in the body of each expression in the let binding *)
       let subst_erhs = List.map (fun (x, ebody) -> (x, nsubst ebody env)) erhs
 
       Let(subst_erhs, nsubst ebody newenv)
@@ -171,20 +189,22 @@ let newVar : string -> string =
 
 (* Correct, capture-avoiding substitution *)
 
+(* CHANGED *)
 let rec subst (e : expr) (env : (string * expr) list) : expr =
     match e with
     | CstI i -> e
     | Var x  -> lookOrSelf env x
     | Let(erhs, ebody) ->
+      (* For each variable defined int the let binding: Generate a unique name *)
       let renamed_xs = List.map (fun (x, ebody) -> (x, newVar x, ebody)) erhs
-      let newenv = List.fold (fun acc (x, x', ebody) -> (x, Var x') :: remove acc x) env renamed_xs
-      let subst_erhs = List.map (fun (_, x', ebody) -> (x', subst ebody env)) renamed_xs
 
-//      let newx = newVar x
-//      let newenv = (x, Var newx) :: remove env x
+      (* Replace every old x with x' where x' is the unique name generated for x earlier *)
+      let newenv = List.fold (fun acc (x, x', ebody) -> (x, Var x') :: remove acc x) env renamed_xs
+
+      (* Recursively perform subst on each let binding expression *)
+      let subst_erhs = List.map (fun (_, x', ebody) -> (x', subst ebody env)) renamed_xs
       Let(subst_erhs, subst ebody newenv)
-//      Let(newx, subst erhs env, subst ebody newenv)
-    | Prim(ope, e1, e2) -> Prim(ope, subst e1 env, subst e2 env)
+    | Prim(ope, e1, e2) -> Prim(ope, subst e1 env, subst e2 env) (* Recursively perform subst in each branch of the tree *)
 
 let e6s1a = subst e6 [("z", CstI 17)];;
 
@@ -227,16 +247,27 @@ let rec minus (xs, ys) =
                else x :: minus (xr, ys);;
 
 (* Find all variables that occur free in expression e *)
-
+(* CHANGED *)
 let rec freevars e : string list =
     match e with
-    | CstI i -> []
-    | Var x  -> [x]
-    | Let(erhs, ebody) -> 
-          let erhs_freevars = List.fold (fun acc (_, ebody) -> union (acc, (freevars ebody))) [] erhs
-          let erhs_xs = List.map (fun (x, _) -> x) erhs
-          union (erhs_freevars, minus (freevars ebody, erhs_xs))
-    | Prim(ope, e1, e2) -> union (freevars e1, freevars e2);;
+    | CstI _ -> [] (* Constant is not variable *)
+    | Var x -> [ x ] (* Assume it's free for now, we'll get rid of it later if it's not *)
+    | Let(exps, body) ->
+
+        (* For each expression in a let bind with variable "X":
+            - recursively find free vars
+            - subtraact occured vars from the aforementioned free vars
+            - add "x" to the list of occurred vars, and add all of the free vars to the free vars list
+        *)
+        let occuredVariables, free =
+            List.fold
+                (fun (occuredVariables, free) (x, erhs) ->
+                    let f' = minus (freevars erhs, occuredVariables) in (x :: occuredVariables, f' @ free))
+                ([], [])
+                exps
+        (* union free vars foudn in the let expression, with the free vars foud in the body of the let expression *)
+        union (free, minus (freevars body, occuredVariables))
+    | Prim(_, e1, e2) -> union (freevars e1, freevars e2) (* union the free vars of each expression in the binary operation *)
 
 (* Alternative definition of closed *)
 
@@ -264,17 +295,22 @@ let rec getindex vs x =
 
 (* Compiling from expr to texpr *)
 
+(* CHANGED *)
 let rec tcomp (e : expr) (cenv : string list) : texpr =
     match e with
     | CstI i -> TCstI i
     | Var x  -> TVar (getindex cenv x)
     | Let(erhs, ebody) -> 
-        let rec aux (erhs' : (string * expr) list) : texpr =
+        (* 
+            recurse through the list of let expressions
+            - create a texpr for each element in the let expression,
+            - add the variable name of the let expression to the accumulated environment 
+        *)
+        let rec aux (erhs' : (string * expr) list) (cenv' : string list) : texpr =
             match erhs' with
             | [] -> tcomp ebody cenv
-            | [(x, body)] -> TLet(tcomp body cenv, tcomp ebody (x :: cenv))
-            | (x, body) :: xs -> TLet(tcomp body cenv, aux xs)
-        aux erhs
+            | (x, body) :: xs -> let cenv'' = x :: cenv' in TLet(tcomp body cenv', aux xs cenv'')
+        aux erhs cenv
 //      let cenv1 = x :: cenv 
 //      TLet(tcomp erhs cenv, tcomp ebody cenv1)
     | Prim(ope, e1, e2) -> TPrim(ope, tcomp e1 cenv, tcomp e2 cenv);;
@@ -383,12 +419,17 @@ type stackvalue =
 
 (* Compilation to a list of instructions for a unified-stack machine *)
 
+(* CHANGED *)
 let rec scomp (e : expr) (cenv : stackvalue list) : sinstr list =
     match e with
     | CstI i -> [SCstI i]
     | Var x  -> [SVar (getindex cenv (Bound x))]
     | Let(erhs, ebody) -> 
-          let erhs_scomped, cenv' = List.fold (fun (scomp_acc, cenv_acc) (x, xbody) -> scomp xbody cenv @ scomp_acc, Bound x :: cenv_acc) ([], cenv) erhs
+          (* Not a required exercise, so we just made this so that the program would compile *)
+          (* recursively compiles each expression and adds the variable to the accumulated environment.
+             concats the compiled expressions onto the compile body
+          *)
+          let erhs_scomped, cenv' = List.fold (fun (scomp_acc, cenv_acc) (x, xbody) -> scomp xbody cenv_acc @ scomp_acc, Bound x :: cenv_acc) ([], cenv) erhs
           erhs_scomped @ scomp ebody cenv' @ [SSwap; SPop]
     | Prim("+", e1, e2) -> 
           scomp e1 cenv @ scomp e2 (Value :: cenv) @ [SAdd] 
