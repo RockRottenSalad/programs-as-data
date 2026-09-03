@@ -1,0 +1,6 @@
+1. b
+2. a
+3. ba
+4. ababbbaba
+5. aa
+6. babaa
