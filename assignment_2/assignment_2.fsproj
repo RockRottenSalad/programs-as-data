@@ -7,8 +7,13 @@
 
   <ItemGroup>
     <Compile Include="exercise_2.fs" />
-    <Content Include="exercise_3\idk.txt" />
+    <Content Include="exercise_3\exercises.txt" />
     <Content Include="exercise_3\ExprPar.fsy" />
+    <Content Include="exercise_3\NFA.drawio" />
+    <Content Include="exercise_3\DFA+NFA.drawio" />
+    <Content Include="exercise_3\DFA+NFA.png" />
+    <Content Include="exercise_3\tree_3.4.drawio" />
+    <Content Include="exercise_3\Untitled Diagram.drawio.png" />
   </ItemGroup>
 
 </Project>

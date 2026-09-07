@@ -1,0 +1,19 @@
+﻿exercise 3.2
+with empty string:
+(a?b)*a?
+
+without empty string:
+(a?b)+a?|a
+
+exercise 3.3
+
+let z = (17) in z + 2 * 3 end EOF
+
+Expr EOF                                                      (rule A)
+Let NAME EQ Expr IN Expr end EOF                              (rule F)
+Let NAME EQ Expr IN Expr PLUS Expr end EOF                    (rule H)
+Let NAME EQ Expr IN Expr PLUS Expr TIMES Expr end EOF         (rule G)
+Let NAME EQ Expr IN Expr PLUS Expr TIMES CSTINT end EOF       (rule C)
+Let NAME EQ Expr IN Expr PLUS CSTINT TIMES CSTINT end EOF     (rule C)
+Let NAME EQ Expr IN NAME PLUS CSTINT TIMES CSTINT end EOF     (rule B)
+Let NAME EQ CSTINT IN NAME PLUS CSTINT TIMES CSTINT end EOF   (rule C)
