@@ -10,6 +10,8 @@ Regex: a?(b+a?)*
 
 See `diagrams/ex3_2.drawio.svg` for NFA & DFA.
 
+![NFA and DFA](./diagrams/ex3_2.drawio.svg)
+
 # Exercise 3.3
 
 *Write out the rightmost derivation of the string below from the expression grammar at the end of Sect. 3.6.5, corresponding to ExprPar.fsy. Take note of the sequence of grammar rules (A-I) used.*
@@ -36,4 +38,4 @@ Main
 
 See diagram `diagrams/derivationtree.drawio.png`
 
-[Derivation tree](./diagrams/derivationtree.drawio.png)
+![Derivation tree](./diagrams/derivationtree.drawio.png)
