@@ -455,18 +455,41 @@ let intsToFile (inss : int list) (fname : string) =
   Map each instruction to the corresponding stack machine bytecode.
   Uses a continuation to make the function tail-recursive
  *)
+ let sinstrToInt (ins : sinstr): int list =
+    match ins with
+    | SCstI i  -> [0; i]
+    | SVar  i  -> [1; i]
+    | SAdd     -> [2]
+    | SSub     -> [3]
+    | SMul     -> [4]
+    | SPop     -> [5]
+    | SSwap    -> [6]
+
 let assemble (ins : sinstr list) : int list =
     let rec aux (ins : sinstr list) (cont : int list -> int list) =
         match ins with
         | []      -> cont []
-        | x :: xs -> match x with
-                     | SCstI i  -> aux xs (fun ys -> (cont (0 :: i :: ys)))
-                     | SVar  i  -> aux xs (fun ys -> (cont (1 :: i :: ys)))
-                     | SAdd     -> aux xs (fun ys -> (cont (2 :: ys)))
-                     | SSub     -> aux xs (fun ys -> (cont (3 :: ys)))
-                     | SMul     -> aux xs (fun ys -> (cont (4 :: ys)))
-                     | SPop     -> aux xs (fun ys -> (cont (5 :: ys)))
-                     | SSwap    -> aux xs (fun ys -> (cont (6 :: ys)))
+        | x :: xs -> aux xs (fun ys -> (cont (sinstrToInt x @ ys)))
     aux ins id
+(* Or alternatively; we can avoid concatting lists if we don't ensist on using sinstrToInt
+    match x with
+     | SCstI i  -> aux xs (fun ys -> (cont (0 :: i :: ys)))
+     | SVar  i  -> aux xs (fun ys -> (cont (1 :: i :: ys)))
+     | SAdd     -> aux xs (fun ys -> (cont (2 :: ys)))
+     | SSub     -> aux xs (fun ys -> (cont (3 :: ys)))
+     | SMul     -> aux xs (fun ys -> (cont (4 :: ys)))
+     | SPop     -> aux xs (fun ys -> (cont (5 :: ys)))
+     | SSwap    -> aux xs (fun ys -> (cont (6 :: ys)))
+*)
 
+(* CHANGED (2.4 & 2.5) *)
+(* Changed, compiles exprs to scomp list which is then passed to assemble*)
+let ecomp (e : expr) : int list =
+    scomp e [] |> assemble
+
+ (* Changed, now also outputs to a file *)
+let ecompp (e : expr) (filepath : string) : int list =
+    let res = ecomp e
+    intsToFile res filepath
+    res
 (* -----------------------------------------------------------------  *)
