@@ -34,5 +34,6 @@ Main
 # Exercise 3.4 Draw the above derivation as a tree
 
 
-See diagram `diagram/derivationtree.drawio.png`
+See diagram `diagrams/derivationtree.drawio.png`
 
+[Derivation tree](./diagrams/derivationtree.drawio.png)
