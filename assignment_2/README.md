@@ -37,5 +37,5 @@ Main EOF
 
 See svg file `diagram/derivationtree.drawio.png`
 
-[Derivation Tree](diagram/derivationtree.drawio.png)
+[Derivation Tree](./diagram/derivationtree.drawio.png)
 
