@@ -1,6 +1,3 @@
-import java.io.File;
-import java.util.Scanner;
-import java.util.Arrays;
 /* Java implementation of a unified-stack abstract machine 
    sestoft@itu.dk * 2001-02-05 
 
@@ -19,24 +16,48 @@ import java.util.Arrays;
    This is a Java program but might be written in C instead; it does
    not rely on object-orientation or garbage collection.  */
 
+import java.io.*;
+import java.util.*;
+
 class Machine {
+    
   final static int 
     SCST = 0, SVAR = 1, SADD = 2, SSUB = 3, SMUL = 4, SPOP = 5, SSWAP = 6;
-  
-  public static void main(String[] args) throws Exception {
-      /* CHANGED: To allow reading file form args */
-      if(args.length >= 1) {
-          System.out.println("Attempting to run program in file: " + args[0]);
-          File f = new File(args[0]);
-          Scanner sc = new Scanner(f);
-          final int[] ins = Arrays.stream( sc.nextLine().split(" ") ).mapToInt(Integer::parseInt).toArray();
-          sc.close();
-          System.out.print("Result: ");
-          System.out.println(seval(ins));
-          return;
-      }
 
-    System.out.println("No file provided as argument, running default test programs");
+    public static void main(String[] args)        
+	throws FileNotFoundException, IOException {
+	if (args.length == 0) 
+	    System.out.println("Usage: java Machine <programfile>\n");
+	else
+	    execute(args);
+    }
+
+static void execute(String[] args) 
+	throws FileNotFoundException, IOException {
+	int[] p = readfile(args[0]);
+	System.out.println("Result: "+ seval(p)+"\n");	
+}
+
+public static int[] readfile(String filename) 
+	throws FileNotFoundException, IOException {
+	ArrayList<Integer> rawprogram = new ArrayList<Integer>();
+	Reader inp = new FileReader(filename);
+	StreamTokenizer tstream = new StreamTokenizer(inp);
+	tstream.parseNumbers();
+	tstream.nextToken();
+	while (tstream.ttype == StreamTokenizer.TT_NUMBER) {
+	    rawprogram.add(Integer.valueOf((int)tstream.nval)) ;; 
+	    tstream.nextToken();
+	}
+	inp.close();
+	final int programsize = rawprogram.size();
+	int[] program = new int[programsize];
+	for (int i=0; i<programsize; i++)
+	    program[i] = ((Integer)(rawprogram.get(i))).intValue();
+	return program;
+}
+    
+  public static void test() {
     final int[] rpn1 = { SCST, 17, SVAR, 0, SVAR, 1, SADD, SSWAP, SPOP };
     System.out.println(seval(rpn1));
     final int[] rpn2 = { SCST, 17, SCST, 22, SCST, 100, SVAR, 1, SMUL, 
@@ -78,3 +99,4 @@ class Machine {
     return stack[sp];      
   }
 }
+
