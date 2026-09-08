@@ -19,23 +19,20 @@ See `diagrams/ex3_2.drawio.svg` for NFA & DFA.
 ```
 Note: Added parenthesis, square brackets, and values for the sake of readability
 
-Main EOF
-=> Expr
-=> LET NAME(z) EQ Expr IN Expr END
-=> LET NAME(z) EQ Expr IN (Expr PLUS Expr) END
-=> LET NAME(z) EQ Expr IN [Expr PLUS (Expr TIMES Expr)] END
-=> LET NAME(z) EQ Expr IN (Expr PLUS [Expr TIMES CSTINT(3)]) END
-=> LET NAME(z) EQ Expr IN (Expr PLUS [CSTINT(2) TIMES CSTINT(3)]) END
-=> LET NAME(z) EQ Expr IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END
-=> LET NAME(z) EQ (LPAR Expr RPAR) IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END
-=> LET NAME(z) EQ (LPAR CSTINT(17) RPAR) IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END
+Main
+=> Expr EOF                                                                                     (rule A)
+=> LET NAME(z) EQ Expr IN Expr END                                                              (rule F)
+=> LET NAME(z) EQ Expr IN (Expr PLUS Expr) END                                                  (rule H)
+=> LET NAME(z) EQ Expr IN [Expr PLUS (Expr TIMES Expr)] END                                     (rule G)
+=> LET NAME(z) EQ Expr IN (Expr PLUS [Expr TIMES CSTINT(3)]) END                                (rule C)
+=> LET NAME(z) EQ Expr IN (Expr PLUS [CSTINT(2) TIMES CSTINT(3)]) END                           (rule C)
+=> LET NAME(z) EQ Expr IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END                        (rule B)
+=> LET NAME(z) EQ (LPAR Expr RPAR) IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END            (rule E)
+=> LET NAME(z) EQ (LPAR CSTINT(17) RPAR) IN (NAME(z) PLUS [CSTINT(2) TIMES CSTINT(3)]) END      (rule C)
 ```
-
 
 # Exercise 3.4 Draw the above derivation as a tree
 
 
-See svg file `diagram/derivationtree.drawio.png`
-
-[Derivation Tree](./diagram/derivationtree.drawio.png)
+See diagram `diagram/derivationtree.drawio.png`
 
