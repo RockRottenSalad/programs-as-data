@@ -35,5 +35,7 @@ Main EOF
 # Exercise 3.4 Draw the above derivation as a tree
 
 
-See svg file `diagram/ex3_4.drawio.svg`
+See svg file `diagram/derivationtree.drawio.png`
+
+[Derivation Tree](diagram/derivationtree.drawio.png)
 
