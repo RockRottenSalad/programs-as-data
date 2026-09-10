@@ -1,0 +1,6 @@
+--load:load_deps.fsx
+--load:Absyn.fs
+--load:ExprPar.fs
+--load:ExprLex.fs 
+--load:Parse.fs
+--load:Expr.fs

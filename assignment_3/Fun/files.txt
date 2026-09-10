@@ -1,0 +1,6 @@
+--load:load_deps.fsx
+--load:Absyn.fs
+--load:FunPar.fs
+--load:FunLex.fs 
+--load:Parse.fs
+--load:Fun.fs
