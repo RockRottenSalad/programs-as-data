@@ -58,7 +58,7 @@ let rec eval (e : expr) (env : value env) : int =
     | Call(Var f, eArgs) -> (* CHANGED | 4.3*)
       let fClosure = lookup env f
       match fClosure with
-      | Closure (f, x, fBody, fDeclEnv) ->
+      | Closure (f, x, fBody, fDeclEnv) -> (* CHANGED | 4.3 *)
         let xVals = List.map (fun eArg -> eval eArg env |> Int) eArgs
         (*let xVal = Int(eval eArg env)*)
         (*let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv*)
