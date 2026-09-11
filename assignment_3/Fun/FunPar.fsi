@@ -58,6 +58,8 @@ type tokenId =
     | TOKEN_error
 type nonTerminalId = 
     | NONTERM__startMain
+    | NONTERM_Args
+    | NONTERM_StringArgs
     | NONTERM_Main
     | NONTERM_Expr
     | NONTERM_AtExpr
