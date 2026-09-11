@@ -34,7 +34,7 @@ let compString (source: string) : sinstr list =
 
 # Exercise 3.7 - Extend the expression language abstract syntax and the lexer and parser specifications with conditions expressions. The abstract syntax should be If(e1, e2, e3)...
 
-Use grep(or some else that can search) and look for `CHANGED | 3.7` to find all these changes.
+Use grep(or something else that can search) and look for `CHANGED | 3.7` to find all these changes.
 
 
 # Exercise 4.2 - Write more example progrms in the functional language, and test them in the same way as in Exercise 4.1
@@ -73,6 +73,6 @@ end end
 
 # Exercise 4.3 & Exercise 4.4 (Functions that support multiple argument)
 
-Use grep(or some else that can search) and look for `CHANGED | 4.3` and
+Use grep(or something else that can search) and look for `CHANGED | 4.3` and
 `CHANGED | 4.4` to find all these changes.
 
