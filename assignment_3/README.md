@@ -36,9 +36,84 @@ let compString (source: string) : sinstr list =
 It can naturally also be found in `Expr/Expr.fs` on line `344`.
 
 
-# Exercise 3.7 - Extend the expression language abstract syntax and the lexer and parser specifications with conditions expressions. The abstract syntax should be If(e1, e2, e3)...
+# Exercise 3.7
+> Extend the expression language abstract syntax and the lexer and parser specifications with conditions expressions. The abstract syntax should be If(e1, e2, e3)...
 
-Use grep(or something else that can search) and look for `CHANGED | 3.7` to find all these changes.
+HINT: Use grep(or something else that can search) and look for `CHANGED | 3.7` to find the exact location of the changes rather than manually scrolling through the files.
+
+In `ExprLex.fsl`, we add cases to match the different tokens that are used in
+an If statement.
+
+```fsharp
+| "if" -> IF        (* CHANGED | 3.7 *)
+| "then" -> THEN    (* CHANGED | 3.7 *)
+| "else" -> ELSE    (* CHANGED | 3.7 *)
+```
+
+In `ExprPar.fsy` added tokens used in an If statement:
+
+```fsharp
+%token IF    /* CHANGED | 3.7 */
+%token THEN  /* CHANGED | 3.7 */
+%token ELSE  /* CHANGED | 3.7 */
+```
+
+Also added a rule for If states under `Expr:`. The idea is we expect an IF
+token, then a boolean expression, afterwards a THEN token and finally the two
+cases depending on what the boolean expression evaluates to.
+```fsharp
+| IF Expr THEN Expr ELSE Expr         { If($2, $4, $6)    } /* CHANGED | 3.7 */
+```
+
+In `Absyn.fs` we've defined the If statement as a part of our AST.
+```fsharp
+| If of expr * expr * expr
+```
+
+In `Expr.fs`, add the functions which match on an expression have been modified to accomodate for the new If statement
+
+In the `eval` function we've simply added a case which evaluates the correct branch depending on whether if the guard was true or false.
+```
+| If(guard, e1, e2) -> if eval guard env <> 0 then eval e1 env else eval e2 env
+```
+
+For both `fmt1` and `fmt2`(the string formatting functions), we simply print out the if statement.
+```fsharp
+(* In fmt1: *)
+| If(guard, e1, e2) -> String.concat " " [ "if"; fmt1 guard; "then"; fmt1 e1; "else"; fmt1 e2 ]
+
+(* In fmt2: *)
+| If(guard, e1, e2) -> String.concat " " [ "if"; fmt2 -1 guard; "then"; fmt2 -1 e1; "else"; fmt2 -1 e2 ]
+
+```
+
+We also modified the `closedin` function to check that the guard expression and both expressions are closed in the if statement.
+```fsharp
+    (* CHANGED | 3.7 *)
+    | If(guard, e1, e2) -> closedin guard env && closedin e1 env && closedin e2 env
+
+```
+
+The `freevars` function has been modified to accomodate for the if statement. We simply recursively union together all the free vars from each expression in the if statement.
+
+```fsharp
+(* CHANGED | 3.7 *)
+| If(guard, e1, e2) -> union (union (freevars guard) (freevars e1)) (freevars e2)
+
+```
+
+In the `tcomp` function we simply compile the expr if statement into a tcomp if statement.
+```fsharp
+(* CHANGED | 3.7 *)
+| If(guard, e1, e2) -> TIf(tcomp guard cenv, tcomp e1 cenv, tcomp e2 cenv)
+```
+
+And naturally, since we've modified `tcomp` we also need to modify `teval` to accomodate the if statement.
+This is basically the same as the regular eval, just for a `texpr` instead of `expr`.
+```fsharp
+| TIf(guard, e1, e2) -> if teval guard renv <> 0 then teval e1 renv else teval e2 renv
+```
+
 
 # Exercise 4.1
 > Get archive fun.zip from the homepage and unpack to directory `Fun`. It contains lexer and parser specifications and interpreter for a small first-order functional language. |> Generate and compile the lexer and parser as described in `README.TXT`; parse and run some example programs with `ParseAndRun.fs`.
