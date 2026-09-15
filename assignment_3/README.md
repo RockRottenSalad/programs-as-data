@@ -155,6 +155,9 @@ end end
 # Exercise 4.3
 > Modify the language to allow functions to take one or more arguments.
 
+Use grep(or something else that can search) and look for `CHANGED | 4.3` and
+`CHANGED | 4.4` to find all these changes.
+
 **Note:** For all of these, please do look at the actual files. Below is a summary of the changes made to solve the exercise.
 
 The first change was modifying the abstract syntax in `Absyn.fs` to allow it to take more than one argument.
@@ -190,8 +193,46 @@ We've left the previous code commented out so that it's easier to see the differ
 
 
 
-# Exercise 4.4 (Functions that support multiple argument)
+
+# Exercise 4.4 
+> In continuation of Exercise 4.3, modify the parser specification to accept a language where functions may take any (non-zero) > number of arguments. You need to modify the AppExpr nonterminal and its semantic action to produce `Call(Var "f", [Var "a"; Var > "b"])` instead.
 
 Use grep(or something else that can search) and look for `CHANGED | 4.3` and
 `CHANGED | 4.4` to find all these changes.
+
+For `AtExpr` the `Letfun` Grammar definition changed, substituting `NAME` for `StringArgs` in `FunPar.fsy`, as follows:
+
+```
+/* CHANGED | 4.4 */
+AtExpr:
+    Const                                     { $1                     }
+  | NAME                                      { Var $1                 }
+  | LET NAME EQ Expr IN Expr END              { Let($2, $4, $6)        }
+  | LET NAME StringArgs EQ Expr IN Expr END   { Letfun($2, $3, $5, $7) }
+  | LPAR Expr RPAR                            { $2                     }
+;
+
+where `StringArgs` is defined as:
+```
+StringArgs: 
+    NAME                                { [$1]     }
+  | NAME StringArgs                     { $1 :: $2 }
+;
+
+The idea is substituting the terminal `NAME` with a non-terminal `StringArgs` which can either be a Terminal `NAME` or a Terminal `NAME` followed by a non-terminal `StringArgs`. This way the grammar recursively allows one of more arguments.
+
+```
+/* CHANGED | 4.4 */
+AppExpr:
+    AtExpr Args                         { Call($1, $2)           }
+  | AppExpr Args                        { Call($1, $2)           }
+;
+
+```
+Args: 
+    AtExpr                                { [$1]     }
+  | AtExpr Args                           { $1 :: $2 }
+;
+
+The same logic was applied for `AppExpr` with `Args`. 
 
