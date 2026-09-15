@@ -1,3 +1,19 @@
+
+# Running the program
+
+For the `Expr` directory, first run `dotnet build` and then:
+```
+dotnet fsi -r bin/Debug/net10.0/FsLexYacc.Runtime.dll Absyn.fs ExprPar.fs ExprLex.fs Parse.fs Expr.fs
+```
+
+
+For the `Fun` directory, first run `dotnet build` and then:
+
+```
+dotnet fsi -r bin/Debug/net10.0/FsLexYacc.Runtime.dll Absyn.fs FunPar.fs FunLex.fs Parse.fs Fun.fs ParseAndRun.fs
+```
+
+
 # Exercise 3.5
 > Get expr.zip from the book homepage and unpack it. Using a command prompt, generate (1) the lexer and (2) the parser for expressions by running fslex and fsyacc;
 > then (3) load the expression abstract syntax, the lexer and parser modules, and the expression interpreter and compilers, into an interactive F# session (fsi). 
