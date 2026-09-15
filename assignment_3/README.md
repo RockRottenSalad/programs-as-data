@@ -171,7 +171,22 @@ Closure of string * string list * expr * value env
 What this means in practice is that a closure is essentially `Closure(f, params, fBody, fDeclEnv)`.
 
 To finally integrate this into the interpreter the `env` function had to be changed, specifically `Call` branch in order to support the new abstract syntax.
-- `Call` was chan
+
+Upon looking up the function closure in the environment, we evaluate each argument within the current environment. We then zip each evaluated argument with their associated variable name and add it to the environment.
+
+We've left the previous code commented out so that it's easier to see the difference.
+```fsharp
+    | Call(Var f, eArgs) -> (* CHANGED | 4.3*)
+      let fClosure = lookup env f
+      match fClosure with
+      | Closure (f, x, fBody, fDeclEnv) -> (* CHANGED | 4.3 *)
+        let xVals = List.map (fun eArg -> eval eArg env |> Int) eArgs
+        (*let xVal = Int(eval eArg env)*)
+        (*let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv*)
+        let fBodyEnv = List.zip x xVals @ (f, fClosure) :: fDeclEnv
+        eval fBody fBodyEnv
+
+```
 
 
 
