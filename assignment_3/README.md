@@ -118,7 +118,7 @@ This is basically the same as the regular eval, just for a `texpr` instead of `e
 # Exercise 4.1
 > Get archive fun.zip from the homepage and unpack to directory `Fun`. It contains lexer and parser specifications and interpreter for a small first-order functional language. |> Generate and compile the lexer and parser as described in `README.TXT`; parse and run some example programs with `ParseAndRun.fs`.
 
-This has been done, nothing work mentioning here.
+This has been done, nothing worth mentioning here.
 
 # Exercise 4.2
 > Write more example programs in the functional language, and test them in the same way as in Exercise 4.1
