@@ -73,9 +73,7 @@ AtExpr:
 
 /* CHANGED | 4.4 */
 AppExpr:
-    AtExpr AtExpr                       { Call($1, [$2])           }
-  | AppExpr AtExpr                      { Call($1, [$2])           }
-  | AtExpr Args                         { Call($1, $2)           }
+    AtExpr Args                         { Call($1, $2)           }
   | AppExpr Args                        { Call($1, $2)           }
 ;
 
