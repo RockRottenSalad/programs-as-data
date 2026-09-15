@@ -1,9 +1,11 @@
-# Exercise 3.5 - Get expr.zip from the book homepage and ..., Now try the parser on several example expressions, both well-formed and ill-formed ones, ..., and some of your own invetion!
+# Exercise 3.5
+> Get expr.zip from the book homepage and unpack it. Using a command prompt, generate (1) the lexer and (2) the parser for expressions by running fslex and fsyacc;
+> then (3) load the expression abstract syntax, the lexer and parser modules, and the expression interpreter and compilers, into an interactive F# session (fsi). 
+> Now try the parser on several example expressions, both well-formed and ill-formed ones, such as these, and some of your own invention:
 
-Our own invetions:
+Below are some of our own inventions.
 
-Some well formed expressions:
-
+Well-formed expressions:
 ```
 open Parse;;
 fromString "10 * let x = 25 in x * 2 end";
@@ -11,8 +13,7 @@ fromString "4 - 0 * 2";;
 fromString "let x = (5*5) in let y = x*x in let z = y*y in z*z end end end";;
 ```
 
-Some ill-formed expressions:
-
+Ill-formed expressions;
 ```
 open Parse;;
 fromString "++-5";
@@ -21,9 +22,10 @@ fromString "let x = 10 in x ** 2 end";;
 ```
 
 
-# Exercise 3.6 - Use the expression parser from Parse.fs and the compiler scompo and the associated datatypes from Expr.fs, to define a function compString: string -> sinstr list.
+# Exercise 3.6
+> Use the expression parser from Parse.fs and the compiler `scomp` (from expressions to stack machine instructions) and the associated datatypes from Expr.fs, to define a function > `compString : string -> sinstr` list that parses a string as an expression and compiles it to stack machine code
 
-See `Expr/Expr.fs` on line `344`.
+The solution is quite simple as it simple parses the string as an `expr` using `Parse.fromString`. This `expr` is then given to the `scomp` compiler, which compiles to a list of `sinstr`. The solution can be seen below:
 
 ```fsharp
 (* parse expression in string form to expr and compiles to stack machine byte code using scomp *)
@@ -31,6 +33,8 @@ let compString (source: string) : sinstr list =
     let e = Parse.fromString source
     scomp e []
 ```
+It can naturally also be found in `Expr/Expr.fs` on line `344`.
+
 
 # Exercise 3.7 - Extend the expression language abstract syntax and the lexer and parser specifications with conditions expressions. The abstract syntax should be If(e1, e2, e3)...
 
