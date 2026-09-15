@@ -211,14 +211,14 @@ AtExpr:
   | LET NAME StringArgs EQ Expr IN Expr END   { Letfun($2, $3, $5, $7) }
   | LPAR Expr RPAR                            { $2                     }
 ;
-
+```
 where `StringArgs` is defined as:
 ```
 StringArgs: 
     NAME                                { [$1]     }
   | NAME StringArgs                     { $1 :: $2 }
 ;
-
+```
 The idea is substituting the terminal `NAME` with a non-terminal `StringArgs` which can either be a Terminal `NAME` or a Terminal `NAME` followed by a non-terminal `StringArgs`. This way the grammar recursively allows one of more arguments.
 
 ```
@@ -228,11 +228,10 @@ AppExpr:
   | AppExpr Args                        { Call($1, $2)           }
 ;
 
-```
 Args: 
     AtExpr                                { [$1]     }
   | AtExpr Args                           { $1 :: $2 }
 ;
-
+```
 The same logic was applied for `AppExpr` with `Args`. 
 
