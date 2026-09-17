@@ -80,7 +80,7 @@ since the `x` bound to `add x` is different from the one we assigned `77` to in
 the let binding. So we correctly get the result of `2 + 5`.
 
 
-### The final program explained
+## The final program explained
 
 ```
 let add x = let f y = x+y in f end in add 2 end
