@@ -1,26 +1,16 @@
-(* File TypedFun/TypedFun.fs
-   An explicitly typed strict first-order functional language. 
-   sestoft@itu.dk 2009-09-11
+(* Polymorphic type inference for a higher-order functional language    *)
+(* The operator (=) only requires that the arguments have the same type *)
+(* sestoft@itu.dk 2010-01-07 *)
 
-   Different abstract syntax from the first-order and higher-order 
-   functional language in Fun/Fun.fs and Fun/HigherFun.fs because
-   of the explicit types on function parameters and function results.
+module TypeInference
 
-   Does not admit mutually recursive function bindings.
+(* If this looks depressingly complicated, read chapter 6 of PLCSD *)
 
-   Every function takes exactly one argument.
+open Absyn
 
-   Type checking.  Explicit types on the argument and result of each
-   declared function.  Expressions and variables may have type int or
-   bool or a functional type.  Functions are monomorphically and
-   explicitly typed.  
-
-   There is no lexer or parser specification for this explicitly typed
-   language because next week we shall infer types rather than check
-   them.  
-*)
-
-module TypedFun
+(* Debugging *)
+let debugP = false
+let debug s = if debugP then printfn "DEBUG: %s" s else ()
 
 (* Environment operations *)
 
@@ -31,159 +21,272 @@ let rec lookup env x =
     | []        -> failwith (x + " not found")
     | (y, v)::r -> if x=y then v else lookup r x;;
 
-(* A type is int, bool or function *)
+(* Operations on sets of type variables, represented as lists.  
+   Inefficient but simple.  Basically compares type variables 
+   on their string names.  Correct so long as all type variable names
+   are distinct. *)
+
+let rec mem x vs = 
+    match vs with
+    | []      -> false
+    | v :: vr -> x=v || mem x vr;;
+
+(* union(xs, ys) is the set of all elements in xs or ys, without duplicates *)
+
+let rec union (xs, ys) = 
+    match xs with 
+    | []    -> ys
+    | x::xr -> if mem x ys then union(xr, ys)
+               else x :: union(xr, ys);;
+
+(* A type is int, bool, function, or type variable: *)
 
 type typ =
-  | TypI                                (* int                         *)
-  | TypB                                (* bool                        *)
-  | TypF of typ * typ                   (* (argumenttype, resulttype)  *)
-  | TypL of typ                         (* CHANGED | 5.7 *)
+     | TypI                                (* integers                   *)
+     | TypB                                (* booleans                   *)
+     | TypF of typ * typ                   (* (argumenttype, resulttype) *)
+     | TypV of typevar                     (* type variable              *)
+     | TypL of typ                         (* CHANGED | 5.7 | list, element type is typ  *)
 
-(* New abstract syntax with explicit types, instead of Absyn.expr: *)
+and tyvarkind =  
+     | NoLink of string                    (* uninstantiated type var.   *)
+     | LinkTo of typ                       (* instantiated to typ        *)
 
-type tyexpr = 
-  | CstI of int
-  | CstB of bool
-  | Var of string
-  | Let of string * tyexpr * tyexpr
-  | Prim of string * tyexpr * tyexpr
-  | If of tyexpr * tyexpr * tyexpr
-  | Letfun of string * string * typ * tyexpr * typ * tyexpr
-          (* (f,       x,       xTyp, fBody,  rTyp, letBody *)
-  | Call of tyexpr * tyexpr
+and typevar =
+     (tyvarkind * int) ref                 (* kind and binding level     *)
 
-(* A runtime value is an integer or a function closure *)
+(* A type scheme is a list of generalized type variables, and a type: *)
 
-type value = 
-  | Int of int
-  | Closure of string * string * tyexpr * value env       (* (f, x, fBody, fDeclEnv) *)
+type typescheme = 
+     | TypeScheme of typevar list * typ   (* type variables and type    *)
 
-let rec eval (e : tyexpr) (env : value env) : int =
-    match e with
-    | CstI i -> i
-    | CstB b -> if b then 1 else 0
-    | Var x  ->
-      match lookup env x with
-      | Int i -> i 
-      | _     -> failwith "eval Var"
-    | Prim(ope, e1, e2) -> 
-      let i1 = eval e1 env
-      let i2 = eval e2 env
-      match ope with
-      | "*" -> i1 * i2
-      | "+" -> i1 + i2
-      | "-" -> i1 - i2
-      | "=" -> if i1 = i2 then 1 else 0
-      | "<" -> if i1 < i2 then 1 else 0
-      | _   -> failwith "unknown primitive"
-    | Let(x, eRhs, letBody) -> 
-      let xVal = Int(eval eRhs env)
-      let bodyEnv = (x, xVal) :: env 
-      eval letBody bodyEnv
-    | If(e1, e2, e3) -> 
-      let b = eval e1 env
-      if b<>0 then eval e2 env else eval e3 env
-    | Letfun(f, x, _, fBody, _, letBody) -> 
-      let bodyEnv = (f, Closure(f, x, fBody, env)) :: env 
-      eval letBody bodyEnv
-    | Call(Var f, eArg) -> 
-      let fClosure = lookup env f
-      match fClosure with
-      | Closure (f, x, fBody, fDeclEnv) ->
-        let xVal = Int(eval eArg env)
-        let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv
-        eval fBody fBodyEnv
-      | _ -> failwith "eval Call: not a function"
-    | Call _ -> failwith "illegal function in Call"
+(* *)
 
-(* Type checking for the first-order functional language: *)
+let setTvKind (tyvar : typevar) newKind =
+    let (kind, lvl) = tyvar.Value
+    tyvar.Value <- (newKind, lvl)
 
-let rec typ (e : tyexpr) (env : typ env) : typ =
+let setTvLevel (tyvar : typevar) newLevel =
+    let (kind, lvl) = tyvar.Value
+    tyvar.Value <- (kind, newLevel)
+
+(* Normalize a type; make type variable point directly to the
+   associated type (if any).  This is the `find' operation, with path
+   compression, in the union-find algorithm. *)
+
+let rec normType t0 = 
+    match t0 with
+    | TypV tyvar ->
+      match tyvar.Value with 
+      | (LinkTo t1, _) -> let t2 = normType t1 
+                          setTvKind tyvar (LinkTo t2); t2
+      | _ -> t0
+    |  _ -> t0;
+
+let rec freeTypeVars t : typevar list = 
+    match normType t with
+    | TypI        -> []
+    | TypB        -> []
+    | TypV tv     -> [tv]
+    | TypF(t1,t2) -> union(freeTypeVars t1, freeTypeVars t2)
+    | TypL typ -> freeTypeVars typ (* CHANGED | 5.7 *)
+
+let occurCheck tyvar tyvars =                     
+    if mem tyvar tyvars then failwith "type error: circularity" else ()
+
+let pruneLevel maxLevel tvs = 
+    let reducelevel (tyvar : typevar) = 
+        let (_, level) = tyvar.Value
+        setTvLevel tyvar (min level maxLevel)
+    List.iter reducelevel tvs 
+
+(* Make type variable tyvar equal to type t (by making tyvar link to t),
+   but first check that tyvar does not occur in t, and reduce the level
+   of all type variables in t to that of tyvar.  This is the `union'
+   operation in the union-find algorithm.  *)
+
+let rec linkVarToType (tyvar : typevar) t =
+    let (_, level) = tyvar.Value
+    let fvs = freeTypeVars t
+    occurCheck tyvar fvs;
+    pruneLevel level fvs;
+    setTvKind tyvar (LinkTo t)
+
+let rec typeToString t : string =
+    match t with
+    | TypI         -> "int"
+    | TypB         -> "bool"
+    | TypV _       -> failwith "typeToString impossible"
+    | TypF(t1, t2) -> "function"
+    | TypL typ -> "list" (* CHANGED | 5.7 *)
+
+(* Pretty-print type, using names 'a, 'b, ... for type variables *)
+
+let rec showType t : string =
+    let rec pr t = 
+        match normType t with
+        | TypI         -> "int"
+        | TypB         -> "bool"
+        | TypV tyvar   -> 
+          match tyvar.Value with
+          | (NoLink name, _) -> name
+          | _                -> failwith "showType impossible"
+        | TypF(t1, t2) -> "(" + pr t1 + " -> " + pr t2 + ")"
+        | TypL typ -> showType typ + " list" (* CHANGED | 5.7 *) 
+
+    pr t 
+
+let rec showTEnv tenv =
+  let showKind = function
+    NoLink s -> "NoLink("+s+")"
+  | LinkTo typ -> "LinkTo("+(showType typ)+")"
+  let showTyvar (tv : typevar) =
+    match tv.Value with
+      (kind,lvl) -> "("+(showKind kind)+","+(lvl.ToString())+")"
+  let showTypescheme = function
+    TypeScheme(tvs,typ) -> "V" + (List.foldBack (fun tv a -> (showTyvar tv) + "." + a) tvs "") + (showType typ)
+  List.foldBack (fun (v,ts) a -> v + "->" + (showTypescheme ts) + ";" + a) tenv ""
+      
+(* Unify two types, equating type variables with types as necessary *)
+
+let rec unify t1 t2 : unit =
+    let t1' = normType t1
+    let t2' = normType t2
+    let _ = debug ("Unify called with t1=" + (showType t1) + " and t2= " + (showType t2))
+    match (t1', t2') with
+    | (TypI, TypI) -> ()
+    | (TypB, TypB) -> ()
+    | (TypF(t11, t12), TypF(t21, t22)) -> (unify t11 t21; unify t12 t22)
+    | (TypV tv1, TypV tv2) -> 
+      let (_, tv1level) = tv1.Value
+      let (_, tv2level) = tv2.Value
+      if tv1 = tv2                then () 
+      else if tv1level < tv2level then linkVarToType tv1 t2'
+                                  else linkVarToType tv2 t1'
+    | (TypV tv1, _       ) -> linkVarToType tv1 t2'
+    | (_,        TypV tv2) -> linkVarToType tv2 t1'
+    | (TypI,     t) ->        failwith ("type error: int and " + typeToString t)
+    | (TypB,     t) ->        failwith ("type error: bool and " + typeToString t)
+    | (TypF _,   t) ->        failwith ("type error: function and " + typeToString t)
+    | TypL _, TypI ->         failwith ("type error: list and int")               (* CHANGED | 5.7 *) 
+    | TypL _, TypB ->         failwith ("type error: list and bool")              (* CHANGED | 5.7 *) 
+    | TypL _, TypF _ ->       failwith ("type error: list and function")          (* CHANGED | 5.7 *) 
+    | TypL typ1, TypL typ2 -> unify typ1 typ2                                     (* CHANGED | 5.7 *) 
+
+(* Generate fresh type variables *)
+
+let tyvarno = ref 0
+
+let newTypeVar level : typevar = 
+    let rec mkname i res = 
+            if i < 26 then char(97+i) :: res
+            else mkname (i/26-1) (char(97+i%26) :: res)
+    let intToName i = new System.String(Array.ofList('\'' :: mkname i []))
+    tyvarno.Value <- tyvarno.Value + 1;
+    ref (NoLink (intToName (tyvarno.Value)), level)
+
+(* Generalize over type variables not free in the context; that is,
+   over those whose level is higher than the current level: *)
+
+let rec generalize level (t : typ) : typescheme =
+    let _ = debug ("generalize with level: " + level.ToString())
+    let notfreeincontext (tyvar : typevar) = 
+        let (_, linkLevel) = tyvar.Value
+        let _ = debug ("  linklevel = " + linkLevel.ToString())
+        linkLevel > level
+    let tvs = List.filter notfreeincontext (freeTypeVars t)
+    TypeScheme(tvs, t)
+
+(* Copy a type, replacing bound type variables as dictated by tvenv,
+   and non-bound ones by a copy of the type linked to *)
+
+let rec copyType subst t : typ = 
+    match t with
+    | TypV tyvar ->
+      let (* Could this be rewritten so that loop does only the substitution *)
+          rec loop subst1 =          
+          match subst1 with 
+               | (tyvar1, type1) :: rest -> if tyvar1 = tyvar then type1 else loop rest
+               | [] -> match tyvar.Value with
+                       | (NoLink _, _)  -> t
+                       | (LinkTo t1, _) -> copyType subst t1
+      loop subst
+    | TypF(t1,t2) -> TypF(copyType subst t1, copyType subst t2)
+    | TypI        -> TypI
+    | TypB        -> TypB
+    | TypL typ -> TypL (copyType subst typ)  (* CHANGED | 5.7 *)
+
+(* Create a type from a type scheme (tvs, t) by instantiating all the
+   type scheme's parameters tvs with fresh type variables *)
+
+let specialize level (TypeScheme(tvs, t)) : typ =
+    let bindfresh tv = (tv, TypV(newTypeVar level))
+    match tvs with
+    | [] -> t
+    | _  -> let subst = List.map bindfresh tvs
+            copyType subst t
+
+(* A type environment maps a program variable name to a typescheme *)
+
+type tenv = typescheme env
+
+(* Type inference helper function:
+   (typ lvl env e) returns the type of e in env at level lvl *)
+
+let rec typ (lvl : int) (env : tenv) (e : expr) : typ =
     match e with
     | CstI i -> TypI
     | CstB b -> TypB
-    | Var x  -> lookup env x 
-    | Prim(ope, e1, e2) -> 
-      let t1 = typ e1 env
-      let t2 = typ e2 env
-      match (ope, t1, t2) with
-      | ("*", TypI, TypI) -> TypI
-      | ("+", TypI, TypI) -> TypI
-      | ("-", TypI, TypI) -> TypI
-      | ("=", TypI, TypI) -> TypB
-      | ("<", TypI, TypI) -> TypB
-      | ("&", TypB, TypB) -> TypB
-      | _   -> failwith "unknown op, or type error"
+    | Var x  -> specialize lvl (lookup env x)
+    | Prim(ope, e1, e2) ->
+      let _ = debug ("Type Prim on e1: " + (showTEnv env))      
+      let t1 = typ lvl env e1
+      let _ = debug ("Type Prim on e2: " + (showTEnv env))      
+      let t2 = typ lvl env e2
+      match ope with
+      | "*" -> (unify TypI t1; unify TypI t2; TypI)
+      | "+" -> (unify TypI t1; unify TypI t2; TypI)
+      | "-" -> (unify TypI t1; unify TypI t2; TypI)
+      | "=" -> (unify t1 t2; TypB)
+      | "<" -> (unify TypI t1; unify TypI t2; TypB)
+      | "&" -> (unify TypB t1; unify TypB t2; TypB)
+      | _   -> failwith ("unknown primitive " + ope) 
     | Let(x, eRhs, letBody) -> 
-      let xTyp = typ eRhs env
-      let letBodyEnv = (x, xTyp) :: env 
-      typ letBody letBodyEnv
-    | If(e1, e2, e3) -> 
-      match typ e1 env with
-      | TypB -> let t2 = typ e2 env
-                let t3 = typ e3 env
-                if t2 = t3 then t2
-                else failwith "If: branch types differ"
-      | _    -> failwith "If: condition not boolean"
-    | Letfun(f, x, xTyp, fBody, rTyp, letBody) -> 
-      let fTyp = TypF(xTyp, rTyp) 
-      let fBodyEnv = (x, xTyp) :: (f, fTyp) :: env
-      let letBodyEnv = (f, fTyp) :: env
-      if typ fBody fBodyEnv = rTyp
-      then typ letBody letBodyEnv
-      else failwith ("Letfun: return type in " + f)
-    | Call(Var f, eArg) -> 
-      match lookup env f with
-      | TypF(xTyp, rTyp) ->
-        if typ eArg env = xTyp then rTyp
-        else failwith "Call: wrong argument type"
-      | _ -> failwith "Call: unknown function"
-    | Call(_, eArg) -> failwith "Call: illegal function in call"
+      let lvl1 = lvl + 1
+      let resTy = typ lvl1 env eRhs
+      let letEnv = (x, generalize lvl resTy) :: env
+      typ lvl letEnv letBody
+    | If(e1, e2, e3) ->
+      let t2 = typ lvl env e2
+      let t3 = typ lvl env e3
+      unify TypB (typ lvl env e1);
+      unify t2 t3;
+      t2
+    | Letfun(f, x, fBody, letBody) -> 
+      let lvl1 = lvl + 1
+      let fTyp = TypV(newTypeVar lvl1)
+      let xTyp = TypV(newTypeVar lvl1)
+      let fBodyEnv = (x, TypeScheme([], xTyp)) 
+                      :: (f, TypeScheme([], fTyp)) :: env
+      let rTyp = typ lvl1 fBodyEnv fBody
+      let _    = unify fTyp (TypF(xTyp, rTyp))
+      let bodyEnv = (f, generalize lvl fTyp) :: env
+      let _ = debug ("Letfun letBodyEnv: " + (showTEnv bodyEnv))
+      typ lvl bodyEnv letBody
+    | Call(eFun, eArg) ->
+      let _ = debug ("Type Call: " + (showTEnv env))
+      let tf = typ lvl env eFun 
+      let tx = typ lvl env eArg
+      let tr = TypV(newTypeVar lvl)
+      unify tf (TypF(tx, tr));
+      tr
 
-let typeCheck e = typ e [];;
+(* Type inference: tyinf e0 returns the type of e0, if any *)
+
+let rec tyinf e0 = typ 0 [] e0
+
+let inferType e = 
+    (tyvarno.Value <- 0;
+     showType (tyinf e));;
 
 
-(* Examples of successful type checking *)
-
-let ex1 = Letfun("f1", "x", TypI, Prim("+", Var "x", CstI 1), TypI,
-                 Call(Var "f1", CstI 12));;
-
-(* Factorial *)
-
-let ex2 = Letfun("fac", "x", TypI,
-                 If(Prim("=", Var "x", CstI 0),
-                    CstI 1,
-                    Prim("*", Var "x", 
-                              Call(Var "fac", 
-                                   Prim("-", Var "x", CstI 1)))),
-                 TypI,
-                 Let("n", CstI 7, Call(Var "fac", Var "n")));;
-
-let fac10 = eval ex2 [];;
-
-let ex3 = Let("b", Prim("=", CstI 1, CstI 2),
-              If(Var "b", CstI 3, CstI 4));;
-
-let ex4 = Let("b", Prim("=", CstI 1, CstI 2),
-              If(Var "b", Var "b", CstB false));;
-
-let ex5 = If(Prim("=", CstI 11, CstI 12), CstI 111, CstI 666);;
-
-let ex6 = Letfun("inf", "x", TypI, Call(Var "inf", Var "x"), TypI,
-                 Call(Var "inf", CstI 0));;
-
-let types = List.map typeCheck [ex1; ex2; ex3; ex4; ex5; ex6];;
-
-(* Examples of type errors; should throw exception when run: *)
-
-let exErr1 = Let("b", Prim("=", CstI 1, CstI 2),
-                 If(Var "b", Var "b", CstI 6));;
-
-let exErr2 = Letfun("f", "x", TypB, If(Var "x", CstI 11, CstI 22), TypI,
-                    Call(Var "f", CstI 0));;
-
-let exErr3 = Letfun("f", "x", TypB, Call(Var "f", CstI 22), TypI,
-                    Call(Var "f", CstB true));;
-
-let exErr4 = Letfun("f", "x", TypB, If(Var "x", CstI 11, CstI 22), TypB,
-                    Call(Var "f", CstB true));;
