@@ -136,14 +136,21 @@ type value =
 ...
 ```
 
-Finally, we add a case to handle the lambda in the `eval` function.
+Finally, we add a case to handle the lambda in the `eval` function in `HigherFun.fs`. We need both a case to handle when we have a function value as well as when we're actually calling the function.
 ```fsharp
 let rec eval (e : expr) (env : value env) : value =
 ...
 | Fun(x, fBody) -> Clos(x, fBody, env)
 ...
+| Call(eFun, eArg) -> 
+  let fClosure = eval eFun env
+  match fClosure with
+  | Closure (f, x, fBody, fDeclEnv) -> (* Regular function *)
+  ...
+  | Clos (x, fBody, fDeclEnv) -> (* Anonymous function *)
+        let xVal = eval eArg fDeclEnv
+        eval fBody ((x, xVal) :: fDeclEnv)
 ```
-
 
 # Exercise 6.3 
 > Extend the micro-ML lexer and parser specifications in `FunLex.fsl` and `FunPar.fsy` to permit anonymous functions.
