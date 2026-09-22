@@ -60,6 +60,8 @@ val it: Absyn.expr =
 # Exercise 5.7
 > Extend the monomorphic tpye checker to deal with lists. Use the folowing ekstra kinds of types: `| TypL of typ`
 
+The solution here is found inside the `TypedFun` directory.
+
 # Exercise 6.1
 > Run the evaluator on the following four programs. Is the result of the third one as expected? Explain the result of the last one:
 
