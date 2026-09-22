@@ -15,9 +15,10 @@
 %token PLUS MINUS TIMES DIV MOD
 %token EQ NE GT LT GE LE
 %token LPAR RPAR 
-%token FUN ARROW
+%token FUN ARROW /* CHANGED */
 %token EOF
 
+/* CHANGED, ARROW has lowest precedence */
 %left ARROW             /* lowest precedence  */
 %left ELSE              
 %left EQ NE 
@@ -59,7 +60,7 @@ AtExpr:
   | NAME                                { Var $1                 }
   | LET NAME EQ Expr IN Expr END        { Let($2, $4, $6)        }
   | LET NAME NAME EQ Expr IN Expr END   { Letfun($2, $3, $5, $7) }
-  | FUN NAME ARROW Expr                 { Fun($2, $4)            }
+  | FUN NAME ARROW Expr                 { Fun($2, $4)            }  /* CHANGED */
   | LPAR Expr RPAR                      { $2                     }
 ;
 
