@@ -62,6 +62,21 @@ val it: Absyn.expr =
 
 The solution here is found inside the `TypedFun` directory.
 
+As mandated by the exercise we added another constructor `TypL of typ` to `typ`:
+```fsharp
+type typ =
+     ...
+     | TypL of typ                         (* list, element type is typ  *)
+```
+To implement it completely in `TypeInference.fs` we also made changes to the following functions:
+- `freeTypeVars`
+- `typeToString`
+- `showType`
+- `unify`
+- `copyType`
+
+These changes are quite simple in nature and simpy add another arm to the match statements to handle the cases when the type is a list, so please refer to these functions for the actual changes (changes are annotated with `(* CHANGED *)`).
+
 # Exercise 6.1
 > Run the evaluator on the following four programs. Is the result of the third one as expected? Explain the result of the last one:
 
