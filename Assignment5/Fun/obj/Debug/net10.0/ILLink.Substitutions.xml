@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="parse">
+    <resource name="FSharpSignatureData.parse" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.parse" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.parse" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.parse" action="remove"></resource>
+    <resource name="FSharpOptimizationData.parse" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.parse" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.parse" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.parse" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.parse" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.parse" action="remove"></resource>
+  </assembly>
+</linker>
