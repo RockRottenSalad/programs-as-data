@@ -30,7 +30,6 @@ let rec lookup env x =
 type value = 
   | Int of int
   | Closure of string * string * expr * value env       (* (f, x, fBody, fDeclEnv) *)
-  | Clos of string * expr * value env       (* CHANGED | 6.2 *)
 
 let rec eval (e : expr) (env : value env) : value =
     match e with
@@ -59,7 +58,6 @@ let rec eval (e : expr) (env : value env) : value =
     | Letfun(f, x, fBody, letBody) -> 
       let bodyEnv = (f, Closure(f, x, fBody, env)) :: env
       eval letBody bodyEnv
-    | Fun(x, fBody) -> Clos(x, fBody, env)
     | Call(eFun, eArg) -> 
       let fClosure = eval eFun env  (* Different from Fun.fs - to enable first class functions *)
       match fClosure with
@@ -67,9 +65,6 @@ let rec eval (e : expr) (env : value env) : value =
         let xVal = eval eArg env
         let fBodyEnv = (x, xVal) :: (f, fClosure) :: fDeclEnv
         in eval fBody fBodyEnv
-      | Clos (x, fBody, fDeclEnv) -> 
-            let xVal = eval eArg fDeclEnv
-            eval fBody ((x, xVal) :: fDeclEnv)
       | _ -> failwith "eval Call: not a function";;
 
 (* Evaluate in empty environment: program must have no free variables: *)
@@ -91,7 +86,7 @@ let ex2 = Letfun("fac", "x",
                                    Prim("-", Var "x", CstI 1)))),
                  Call(Var "fac", Var "n"));
 
-let fac10 = eval ex2 [("n", Int 10)]
+(* let fac10 = eval ex2 [("n", Int 10)];; *)
 
 let ex3 = 
     Letfun("tw", "g", 

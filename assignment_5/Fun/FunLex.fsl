@@ -30,7 +30,6 @@ let keyword s =
     | "not"   -> NOT
     | "then"  -> THEN
     | "true"  -> CSTBOOL true
-    | "fun"   -> FUN (* CHANGED | 6.2 *)
     | _       -> NAME s
 }
 
@@ -43,7 +42,6 @@ rule Token = parse
   | "(*"            { commentStart.Value <- lexbuf.StartPos;
                       commentDepth.Value <- 1; 
                       SkipComment lexbuf; Token lexbuf }
-  | "->"            { ARROW } (* CHANGED | 6.2 *)
   | '='             { EQ }
   | "<>"            { NE }
   | '>'             { GT }
@@ -57,8 +55,6 @@ rule Token = parse
   | '%'             { MOD }
   | '('             { LPAR }
   | ')'             { RPAR }
-  | "||"            { OR } (* CHANGED | 4.5 *)
-  | "&&"            { AND } (* CHANGED | 4.5 *)
   | eof             { EOF }
   | _               { failwith "Lexer error: illegal symbol" }
 
