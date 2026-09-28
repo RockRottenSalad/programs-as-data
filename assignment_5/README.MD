@@ -74,3 +74,44 @@ let f x = f x in f end
 let f x = f x in f f end
 //result: "'f"
 ```
+# 7.1
+
+# 7.2
+```shell
+dotnet fsi -r bin/Debug/net10.0/FsLexYacc.Runtime.dll Absyn.fs CPar.fs CLex.fs Parse.fs Interp.fs ParseAndRun.fs
+```
+
+```shell
+open ParseAndRun;;
+run (fromFile "exercises7/exercise7.2_i.c")[];;
+```
+
+```shell
+run (fromFile "exercises7/exercise7.2_ii.c")[];;
+```
+
+```shell
+run (fromFile "exercises7/exercise7.2_iii.c")[];;
+```
+```
+#q;;
+```
+# 7.3
+### Lexer changes
+```F#
+let keyword s =
+    match s with
+    ...
+    | "for"     -> FOR  
+```
+
+### Parser changes
+```F#
+%token ... FOR
+```
+
+```F#
+StmtU:
+   ...
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM  { Block( Stmt( Expr($3) ) :: Stmt( While($5, Block(Stmt($9) :: Stmt(Expr($7)) :: []))) :: []) } /* CHANGED */
+```
