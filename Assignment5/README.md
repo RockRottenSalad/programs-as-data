@@ -155,6 +155,10 @@ This can also be found in the `MicroC/Peak/i.c` file. Now running the program:
 ```
 > run (fromFile "peak/i.c") [];;
 37 
+val it: Interp.store =
+  map
+    [(0, 7); (1, 13); (2, 9); (3, 8); (4, 0); (5, 37); (6, 4); (7, 0); (8, 5);
+     ...]
 ```
 
 > (ii) Write a micro-C program containing a function `void squares(int n,
@@ -191,9 +195,15 @@ void squares(int n, int arr[])
 ```
 Naturally we use `arrsum` from the previous exercise. Running this in `fsi` we get:
 ```
-> run (fromFile "peak/ii.c") [];;
+> run (fromFile "peak/ii.c") [10];;
 285 
+val it: Interp.store =
+  map
+    [(0, 10); (1, 0); (2, 1); (3, 4); (4, 9); (5, 16); (6, 25); (7, 36);
+     (8, 49); ...]
 ```
+Which is what we would expect when `n = 5`.
+
 > Write a micro-C program containing a function `void histogram(int n,
 int ns[], int max, int freq[])` which fills array freq the frequencies
 of the numbers in array ns.
@@ -246,8 +256,12 @@ void printarr(int arr[], int n)
 
 Now we run it and verify we get what we expect. Recall that our array is `[1, 2, 1, 1, 1, 2, 0]`, so there should be 1 zero, 4 ones, 2 twos and 0 threes.
 ```
-> run (fromFile "ex7_programs/ex7_2_iii.c") [];;
-1 4 2 0
+> run (fromFile "peak/iii.c") [];;
+1 4 2 0 
+val it: Interp.store =
+  map
+    [(0, 1); (1, 2); (2, 1); (3, 1); (4, 1); (5, 2); (6, 0); (7, 0); (8, 1);
+     ...]
 ```
 
 # Exercise 7.3
@@ -275,9 +289,9 @@ for (e1; e2; e3) {
     stmnt
 }
 ```
-Is to first read the key word `FOR` then a pair of paranteheses, and inside the parantehese read three expressions of type `Expr` seperated by `;` and then a statement (the body of the loop), i.e.
+Is to first read the key word `FOR` then a pair of parentheses, and inside the parentheses read 3 seperate expressions of type `Expr` seperated by `;` and then a statement (the body of the loop), i.e.
 ```
-FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM
+FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM/StmtU
 ```
 As the exercise mentioned a clever way of encoding a for loop into abstract syntax is using `Block`, `While` and `Expr` since a for loop can be written as:
 ```
@@ -306,3 +320,27 @@ StmtU:
 > 2. Rewrite your programs from Exercise 7.2 to use for-loops instead of while-loops.
 
 Each of the rewritten programs can be found within `Peak/iv2.c`, `Peak/iiv2.c` and `Peak/iiiv2.c`. The functions have their original names, but with a `2` added to the end. Please note we also implemented postfix increment and decrement form `7.4` and `7.5` so the rewritten exmaples use that. Mentally, `++a = a + 1`. We also implemented support for `+=`, `-=`, `*=`, `/=` and `%=`, i.e. compound assignments as per exercise 7.6.
+
+Below are some examples of us running the new programs proving that their results equals their counterpart from 7.2:
+```
+> run (fromFile "peak/iv2.c") [];;
+37 
+val it: Interp.store =
+  map
+    [(0, 7); (1, 13); (2, 9); (3, 8); (4, 0); (5, 37); (6, 4); (7, 0); (8, 5);
+     ...]
+
+> run (fromFile "peak/iiv2.c") [10];;
+285 
+val it: Interp.store =
+  map
+    [(0, 10); (1, 0); (2, 1); (3, 4); (4, 9); (5, 16); (6, 25); (7, 36);
+     (8, 49); ...]
+
+> run (fromFile "peak/iiiv2.c") [];;
+1 4 2 0 
+val it: Interp.store =
+  map
+    [(0, 1); (1, 2); (2, 1); (3, 1); (4, 1); (5, 2); (6, 0); (7, 0); (8, 1);
+     ...]
+```
