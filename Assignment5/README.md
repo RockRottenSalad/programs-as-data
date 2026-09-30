@@ -9,6 +9,7 @@ The reason why `f` should be polymorphic in the let-body, is because it always e
 
 > (ii) Build a type rule tree for this micro-ML program (in the let-body, f should not
 be polymorphic – why?):
+
 Below the type rule tree of the expression can be seen:
 
 <img width="3258" height="432" alt="image" src="https://github.com/user-attachments/assets/59acd027-e4d3-4104-9e42-441b19dc8e5a" />
@@ -132,8 +133,9 @@ Prog
 arrays, pointer arithmetics, and parameter passing.
 > 
 > (i) Write a micro-C program containing a function `void arrsum(int n, int
-arr[], int *sump)` that computes and returns the sum of the first `n` elements
-of the given array `arr`. (...)
+> arr[], int *sump)` that computes and returns the sum of the first `n` elements
+> of the given array `arr`. (...)
+
 The following defines the main function and sets up the array with the desired values etc.
 ```cs
 void main()
