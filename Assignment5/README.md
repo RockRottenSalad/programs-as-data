@@ -30,7 +30,7 @@ in f 42 end
 The reson type inference fails is because `y` and `x` depend on eachother. Inside `g` the variable `y` forces `x` to have the type bool, which means `f`
 is inferred to have type `f: bool -> bool`, but `f` is called with an int, so type inference fails.
 
-> (2) (2) Write micro-ML programs for which the micro-ML type inference report the
+> (2) Write micro-ML programs for which the micro-ML type inference report the
 following types:
 
 Below is a program which type is inferred to be `bool -> bool`:
@@ -94,20 +94,20 @@ declarations, statements, types and expressions.
 Below the parts of the abstract syntax is shown:
 ```
 Prog							
-  [Fundec 								 # Function declaration
-     (None, "main", [(TypI, "n")],
+  [Fundec 								                               # Function declaration
+     (None, "main", [(TypI, "n")],                                     # Aforentioned func dec with name "main" and integer argument "n"
       Block
-        [Stmt								 # Statement
+        [Stmt								                           # While-loop statement
            (While
-              (Prim2 (">", Access (AccVar "n"), CstI 0),		 # Expression and 
+              (Prim2 (">", Access (AccVar "n"), CstI 0),		       # While loop guard Expression
                Block
-                 [Stmt (Expr (Prim1 ("printi", Access (AccVar "n")))); # Statement
-                  Stmt						 # Statement due to ;
-                    (Expr						 # Expression				
+                 [Stmt (Expr (Prim1 ("printi", Access (AccVar "n")))); # Statement with single expression that prints the value of n
+                  Stmt						                           # Statement where we re-assign n to n - 1
+                    (Expr						 				
                        (Assign
                           (AccVar "n",
                            Prim2 ("-", Access (AccVar "n"), CstI 1))))]));
-         Stmt (Expr (Prim1 ("println", CstI 10)))])]			 # Statement		
+         Stmt (Expr (Prim1 ("println", CstI 10)))])]			       # Print newline statement		
 ```
 
 # Exercise 7.2
@@ -117,7 +117,6 @@ arrays, pointer arithmetics, and parameter passing.
 > (i) Write a micro-C program containing a function `void arrsum(int n, int
 arr[], int *sump)` that computes and returns the sum of the first `n` elements
 of the given array `arr`. (...)
-
 The following defines the main function and sets up the array with the desired values etc.
 ```cs
 void main()
@@ -152,7 +151,7 @@ void arrsum(int n, int  arr[], int *sump)
     *sump = sum;
 }
 ```
-This can also be found in the `Peak/i.c` file. Now running the program:
+This can also be found in the `MicroC/Peak/i.c` file. Now running the program:
 ```
 > run (fromFile "peak/i.c") [];;
 37 
@@ -162,14 +161,16 @@ This can also be found in the `Peak/i.c` file. Now running the program:
 int arr[])` that, given `n` and an array arr of length `n` or more fills `arr[i]`
 with `i*i` for `i = 0, . . . , n − 1`.
 
+This program can be found in the `MicroC/Peak/i.c` file.
+
 Declaring the main function is pretty straight forward once again:
 ```cs
-void main()
+void main(int n)
 {
-    int a[10];
+    int a[20];
     int sum;
-    squares(10, a);
-    arrsum(10, a, &sum);
+    squares(n, a);
+    arrsum(n, a, &sum);
     
     print sum;
     println;
@@ -188,7 +189,7 @@ void squares(int n, int arr[])
     }
 }
 ```
-Running this in `fsi` we get:
+Naturally we use `arrsum` from the previous exercise. Running this in `fsi` we get:
 ```
 > run (fromFile "peak/ii.c") [];;
 285 
@@ -197,7 +198,7 @@ Running this in `fsi` we get:
 int ns[], int max, int freq[])` which fills array freq the frequencies
 of the numbers in array ns.
 
-The code is pretty self explanatory:
+This program was written to `MicroC/Peak/iii.c`. The code is pretty self explanatory:
 ```csharp
 void main()
 {
@@ -211,35 +212,21 @@ void main()
     ns[6] = 0;
     
     int freq[4];
+    freq[0] = 0;
+    freq[1] = 0;
+    freq[2] = 0;
+    freq[3] = 0;    
     
     histogram(7, ns, 3, freq);
-    
     printarr(freq, 4);
 }
 
-void histogram(int n, int ns[], int max, int freq[])
-{
-    int count;
-    
-    int c;
-    c = 0;
-    while (c < max + 1)
-    {
-        count = 0;
-        int i;
-        i = 0;
-        
-        while (i < n)
-        {
-            if (ns[i] == c)
-            {
-                count = count  +1;
-            }
-            i = i + 1;
-        }
-        
-        freq[c] = count;
-        c = c + 1;
+void histogram(int n, int ns[], int max, int freq[]) {
+    int i; 
+    i = 0;
+    while(i < n) {
+        freq[ns[i]] = freq[ns[i]] + 1;
+        i = i + 1;
     }
 }
 
@@ -257,8 +244,14 @@ void printarr(int arr[], int n)
 
 ```
 
+Now we run it and verify we get what we expect. Recall that our array is `[1, 2, 1, 1, 1, 2, 0]`, so there should be 1 zero, 4 ones, 2 twos and 0 threes.
+```
+> run (fromFile "ex7_programs/ex7_2_iii.c") [];;
+1 4 2 0
+```
+
 # Exercise 7.3
-> Extend MicroC with a for-loop, permitting for instance
+> 1. Extend MicroC with a for-loop, permitting for instance
 > ```csharp
 > for (i=0; i<100; i=i+1)
 >     sum = sum+i;
@@ -272,7 +265,7 @@ let keyword s =
     | "for"     -> FOR
     | _         -> NAME s
 ```
-And then inside the parser making sure to specify its a token:
+And then inside the parser (`CPar.fsy`) we specify i as a token:
 ```
 %token ... FOR
 ```
@@ -286,7 +279,7 @@ Is to first read the key word `FOR` then a pair of paranteheses, and inside the 
 ```
 FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM
 ```
-As the exercise mentioned a clever way of encoding a for loop is using `Block`, `While` and `Expr` constructors from the abstract syntax, i.e. a for loop can be written as:
+As the exercise mentioned a clever way of encoding a for loop into abstract syntax is using `Block`, `While` and `Expr` since a for loop can be written as:
 ```
 {
     e1;
@@ -296,12 +289,20 @@ As the exercise mentioned a clever way of encoding a for loop is using `Block`, 
     }
 }
 ```
-We can translate this into abstract syntax and finish our extra production rule like so:
+We can translate this into abstract syntax and finish our extra production rules like so:
 ```
 StmtM:  /* No unbalanced if-else */
   ...
   | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM  { Block([Stmt(Expr($3)); Stmt (While($5, Block([Stmt($9); Stmt(Expr($7))])))]) } (* Changed *)
 ;
 ```
+```
+StmtU:
+  ...
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtU  { Block([Stmt(Expr($3)); Stmt (While($5, Block([Stmt($9); Stmt(Expr($7))])))]) } /* changed */
+;
 
-Each of the rewritten programs can be found within `Peak/i.c`, `Peak/ii.c` and `Peak/iii.c`. The functions have their original names, but with a `2` added to the end. Please note we also implemented postfix increment and decrement form `7.4` and `7.5` so the rewritten exmaples use that. Mentally, `++a = a + 1`. We also implemented support for `+=`, `-=`, `*=`, `/=` and `%=`, i.e. compound assignments as per exercise 7.6.
+```
+> 2. Rewrite your programs from Exercise 7.2 to use for-loops instead of while-loops.
+
+Each of the rewritten programs can be found within `Peak/iv2.c`, `Peak/iiv2.c` and `Peak/iiiv2.c`. The functions have their original names, but with a `2` added to the end. Please note we also implemented postfix increment and decrement form `7.4` and `7.5` so the rewritten exmaples use that. Mentally, `++a = a + 1`. We also implemented support for `+=`, `-=`, `*=`, `/=` and `%=`, i.e. compound assignments as per exercise 7.6.
