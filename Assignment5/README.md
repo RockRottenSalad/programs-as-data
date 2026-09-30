@@ -184,7 +184,7 @@ val it: Interp.store =
 int arr[])` that, given `n` and an array arr of length `n` or more fills `arr[i]`
 with `i*i` for `i = 0, . . . , n − 1`.
 
-This program can be found in the `MicroC/Peak/i.c` file.
+This program can be found in the `MicroC/Peak/ii.c` file.
 
 Declaring the main function is pretty straight forward once again:
 ```cs
