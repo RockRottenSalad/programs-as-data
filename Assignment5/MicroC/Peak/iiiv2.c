@@ -13,29 +13,28 @@ void main()
     freq[0] = 0;
     freq[1] = 0;
     freq[2] = 0;
-    freq[3] = 0;    
+    freq[3] = 0;
     
-    histogram(7, ns, 3, freq);
+    histogram2(7, ns, 3, freq);
+    
     printarr(freq, 4);
 }
 
-void histogram(int n, int ns[], int max, int freq[]) {
-    int i; 
-    i = 0;
-    while(i < n) {
+void histogram2(int n, int ns[], int max, int freq[])
+{
+    int i;
+    for (i = 0; i < n; ++i)
+    {
         freq[ns[i]] = freq[ns[i]] + 1;
-        i = i + 1;
     }
 }
 
 void printarr(int arr[], int n)
 {
     int i;
-    i = 0;
-    while (i < n)
+    for (i = 0; i < n; ++i)
     {
         print arr[i];
-        i = i + 1;
     }
     println;
 }

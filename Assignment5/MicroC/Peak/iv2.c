@@ -9,24 +9,21 @@ void main()
     a[3] = 8;
     
     int sum;
-    arrsum(4, a, &sum);
+    arrsum2(4, a, &sum);
     print sum;
     println;
     
 }
 
-
-void arrsum(int n, int  arr[], int *sump)
+void arrsum2(int n, int  arr[], int *sump)
 {
     int sum;
-    int i;
-    i = 0;
     sum = 0;
     
-    while (i < n)
+    int i;
+    for(i = 0; i < n; ++i)
     {
-        sum = sum + arr[i];
-        i = i + 1;
+        sum += arr[i];
     }
     *sump = sum;
 }

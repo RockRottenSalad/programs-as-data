@@ -24,6 +24,9 @@
     <Compile Include="Peak/i.c" />
     <Compile Include="Peak/ii.c" />
     <Compile Include="Peak/iii.c" />
+    <Compile Include="Peak/iv2.c" />
+    <Compile Include="Peak/iiv2.c" />
+    <Compile Include="Peak/iiiv2.c" />
   </ItemGroup>
 
   <ItemGroup>

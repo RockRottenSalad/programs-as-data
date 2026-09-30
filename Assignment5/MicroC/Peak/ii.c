@@ -1,9 +1,9 @@
-void main()
+void main(int n)
 {
-    int a[10];
+    int a[20];
     int sum;
-    squares(10, a);
-    arrsum(10, a, &sum);
+    squares(n, a);
+    arrsum(n, a, &sum);
     
     print sum;
     println;
@@ -20,14 +20,6 @@ void squares(int n, int arr[])
     }
 }
 
-void squares2(int n, int arr[])
-{
-    int i;
-    for (i = 0; i < n; ++i)
-    {
-        arr[i] = i * i;
-    }
-}
 
 // arrsum from the previous exercise
 void arrsum(int n, int  arr[], int *sump)
@@ -41,19 +33,6 @@ void arrsum(int n, int  arr[], int *sump)
     {
         sum = sum + arr[i];
         i = i + 1;
-    }
-    *sump = sum;
-}
-
-void arrsum2(int n, int  arr[], int *sump)
-{
-    int sum;
-    sum = 0;
-    
-    int i;
-    for(i = 0; i < n; i = i + 1)
-    {
-        sum += arr[i];
     }
     *sump = sum;
 }
