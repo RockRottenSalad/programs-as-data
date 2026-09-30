@@ -221,7 +221,7 @@ val it: Interp.store =
     [(0, 10); (1, 0); (2, 1); (3, 4); (4, 9); (5, 16); (6, 25); (7, 36);
      (8, 49); ...]
 ```
-Which is what we would expect when `n = 5`.
+Which is what we would expect when `n = 10`.
 
 > Write a micro-C program containing a function `void histogram(int n,
 int ns[], int max, int freq[])` which fills array freq the frequencies
