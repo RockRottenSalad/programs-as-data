@@ -1,3 +1,20 @@
+# Exercise 6.4
+> (i) Build a type rule tree for this micro-ML program (in the let-body, the type of f
+should be polymorphic – why?):
+
+Below the type rule tree of the expression can be seen:
+<img width="1461" height="222" alt="image" src="https://github.com/user-attachments/assets/100fdfd0-a2cb-498a-a886-d5a48142eb1b" />
+
+The reason why `f` should be polymorphic in the let-body, is because it always evaluates to `1` no matter the argument, so there is no point in restricting the type of the argument.
+
+> (ii) Build a type rule tree for this micro-ML program (in the let-body, f should not
+be polymorphic – why?):
+Below the type rule tree of the expression can be seen:
+
+<img width="3258" height="432" alt="image" src="https://github.com/user-attachments/assets/59acd027-e4d3-4104-9e42-441b19dc8e5a" />
+
+The reason why `f` shouldn't be polymorphic in the let-body is because it calls it self.
+
 # Exercise 6.5
 > (1) Use the type inference on the micro-ML programs shown below, and report what
 type the program has. Some of the type inferences will fail because the programs are
