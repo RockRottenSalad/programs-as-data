@@ -1,0 +1,365 @@
+# Exercise 6.4
+> (i) Build a type rule tree for this micro-ML program (in the let-body, the type of f
+should be polymorphic – why?):
+
+Below the type rule tree of the expression can be seen:
+<img width="1461" height="222" alt="image" src="https://github.com/user-attachments/assets/100fdfd0-a2cb-498a-a886-d5a48142eb1b" />
+
+The reason why `f` should be polymorphic in the let-body, is because it always evaluates to `1` no matter the argument, so there is no point in restricting the type of the argument.
+
+> (ii) Build a type rule tree for this micro-ML program (in the let-body, f should not
+be polymorphic – why?):
+
+Below the type rule tree of the expression can be seen:
+
+<img width="3258" height="432" alt="image" src="https://github.com/user-attachments/assets/59acd027-e4d3-4104-9e42-441b19dc8e5a" />
+
+The reason why `f` shouldn't be polymorphic in the let-body is because it calls it self.
+
+# Exercise 6.5
+> (1) Use the type inference on the micro-ML programs shown below, and report what
+type the program has. Some of the type inferences will fail because the programs are
+not typable in micro-ML; in those cases, explain why the program is not typable:
+
+Below we go through all the examples that fail.
+
+The first failure comes from:
+```
+let f g = g g in f end
+```
+And the reason this fails is because g can't be assigned a type. So as per type inference we start of by giving `g` some typevariable `a`. 
+We then see that `g` is applied to itself. This must mean that `a = b -> c`, since `g` is a function. However, `g` is also the argument, so it must be the case that
+`a = b`. This means that `a = a -> c`, which is not typable, since we can't unify thesee types, because `a` occures in both branches. If we tried to unify it the following would happen:
+```
+a = a -> c =>
+a = (a -> c) -> c =>
+a = ((a -> c) -> c) -> c =>
+....
+```
+So it would never stop.
+
+The second example that fails is:
+```
+let f x =
+let g y = if true then y else x
+in g false end
+in f 42 end
+```
+The reson type inference fails is because `y` and `x` depend on eachother. Inside `g` the variable `y` forces `x` to have the type bool, which means `f`
+is inferred to have type `f: bool -> bool`, but `f` is called with an int, so type inference fails.
+
+> (2) Write micro-ML programs for which the micro-ML type inference report the
+following types:
+
+Below is a program which type is inferred to be `bool -> bool`:
+```fsharp
+let f x =
+    if x then true else false
+in f end
+// This typechecks to: (bool -> bool)
+```
+
+Below is a program which type is inferred to be `int -> int`:
+```fsharp
+let f x =
+    if x = 1 then 0 else 1
+in f end
+// This typechecks to: (int -> int)
+```
+Below is a program which type is inferred to be `int -> int -> int`:
+```fsharp
+let f x =
+    let g y = x + y
+    in g end
+in f end
+// This typechecks to: (int -> (int -> int))
+```
+Below is a program which type is inferred to be `'a -> 'b -> 'a`:
+```fsharp
+let f x =
+    let g y = x in g end
+in f end
+// This typechecks to: ('h -> ('g -> 'h))
+```
+Below is a program which type is inferred to be `('a -> 'b) -> ('b -> c) -> ('a -> 'c)`:
+```fsharp
+let f x =
+    let g y =
+        let z a = y (x a)
+        in z end
+    in g end
+in f end
+// This typechecks to: (('l -> 'k) -> (('k -> 'm) -> ('l -> 'm)))
+```
+
+Below is a program which type is inferred to be `'a -> 'b`:
+```fsharp
+let f x = f x in f end
+// This typechecks to: ('a -> 'b)
+```
+
+Below is a program which type is inferred to be `'a`:
+```fsharp
+let f x = f x in f 1 end
+// This typechecks to: 'f
+```
+
+# Exercise 7.1
+> Run the fromFile parser on the micro-C example in source file ex1.c. In
+your solution to the exercise, include the abstract syntax tree and indicate its parts:
+declarations, statements, types and expressions.
+
+Below the parts of the abstract syntax is shown:
+```
+Prog							
+  [Fundec 								                               # Function declaration
+     (None, "main", [(TypI, "n")],                                     # Aforentioned func dec with name "main" and integer argument "n"
+      Block
+        [Stmt								                           # While-loop statement
+           (While
+              (Prim2 (">", Access (AccVar "n"), CstI 0),		       # While loop guard Expression
+               Block
+                 [Stmt (Expr (Prim1 ("printi", Access (AccVar "n")))); # Statement with single expression that prints the value of n
+                  Stmt						                           # Statement where we re-assign n to n - 1
+                    (Expr						 				
+                       (Assign
+                          (AccVar "n",
+                           Prim2 ("-", Access (AccVar "n"), CstI 1))))]));
+         Stmt (Expr (Prim1 ("println", CstI 10)))])]			       # Print newline statement		
+```
+
+# Exercise 7.2
+> Write and run a few more micro-C programs to understand the use of
+arrays, pointer arithmetics, and parameter passing.
+> 
+> (i) Write a micro-C program containing a function `void arrsum(int n, int
+> arr[], int *sump)` that computes and returns the sum of the first `n` elements
+> of the given array `arr`. (...)
+
+The following defines the main function and sets up the array with the desired values etc.
+```cs
+void main()
+{
+    int a[4];
+    a[0] = 7;
+    a[1] = 13;
+    a[2] = 9;
+    a[3] = 8;
+    
+    int sum;
+    arrsum(4, a, &sum);
+    print sum;
+    println;
+    
+}
+```
+The algorithm is very simple. We initialize a sum variable and a counter `i`. While the counter (the current element) is less than the desired amount of elements `n`, we add the value of the current element `arr[i]` to the `sum`. Once we are done, we simply dereference the pointer to `sump` and write the value of the sum.
+```cs
+void arrsum(int n, int  arr[], int *sump)
+{
+    int sum;
+    int i;
+    i = 0;
+    sum = 0;
+    
+    while (i < n)
+    {
+        sum = sum + arr[i];
+        i = i + 1;
+    }
+    *sump = sum;
+}
+```
+This can also be found in the `MicroC/Peak/i.c` file. Now running the program:
+```
+> run (fromFile "peak/i.c") [];;
+37 
+val it: Interp.store =
+  map
+    [(0, 7); (1, 13); (2, 9); (3, 8); (4, 0); (5, 37); (6, 4); (7, 0); (8, 5);
+     ...]
+```
+
+> (ii) Write a micro-C program containing a function `void squares(int n,
+int arr[])` that, given `n` and an array arr of length `n` or more fills `arr[i]`
+with `i*i` for `i = 0, . . . , n − 1`.
+
+This program can be found in the `MicroC/Peak/ii.c` file.
+
+Declaring the main function is pretty straight forward once again:
+```cs
+void main(int n)
+{
+    int a[20];
+    int sum;
+    squares(n, a);
+    arrsum(n, a, &sum);
+    
+    print sum;
+    println;
+}
+```
+Now for computing the squares `i*i` for `0, 1, ..., n - 1`, we simply have a counter `i`, and while `i < n`, we write `i * i` to `arr[i]`:
+```csharp
+void squares(int n, int arr[])
+{
+    int i;
+    i = 0;
+    while (i < n)
+    {
+        arr[i] = i * i;
+        i = i + 1;
+    }
+}
+```
+Naturally we use `arrsum` from the previous exercise. Running this in `fsi` we get:
+```
+> run (fromFile "peak/ii.c") [10];;
+285 
+val it: Interp.store =
+  map
+    [(0, 10); (1, 0); (2, 1); (3, 4); (4, 9); (5, 16); (6, 25); (7, 36);
+     (8, 49); ...]
+```
+Which is what we would expect when `n = 10`.
+
+> Write a micro-C program containing a function `void histogram(int n,
+int ns[], int max, int freq[])` which fills array freq the frequencies
+of the numbers in array ns.
+
+This program was written to `MicroC/Peak/iii.c`. The code is pretty self explanatory:
+```csharp
+void main()
+{
+    int ns[7];
+    ns[0] = 1;
+    ns[1] = 2;
+    ns[2] = 1;
+    ns[3] = 1;
+    ns[4] = 1;
+    ns[5] = 2;
+    ns[6] = 0;
+    
+    int freq[4];
+    freq[0] = 0;
+    freq[1] = 0;
+    freq[2] = 0;
+    freq[3] = 0;    
+    
+    histogram(7, ns, 3, freq);
+    printarr(freq, 4);
+}
+
+void histogram(int n, int ns[], int max, int freq[]) {
+    int i; 
+    i = 0;
+    while(i < n) {
+        freq[ns[i]] = freq[ns[i]] + 1;
+        i = i + 1;
+    }
+}
+
+void printarr(int arr[], int n)
+{
+    int i;
+    i = 0;
+    while (i < n)
+    {
+        print arr[i];
+        i = i + 1;
+    }
+    println;
+}
+
+```
+
+Now we run it and verify we get what we expect. Recall that our array is `[1, 2, 1, 1, 1, 2, 0]`, so there should be 1 zero, 4 ones, 2 twos and 0 threes.
+```
+> run (fromFile "peak/iii.c") [];;
+1 4 2 0 
+val it: Interp.store =
+  map
+    [(0, 1); (1, 2); (2, 1); (3, 1); (4, 1); (5, 2); (6, 0); (7, 0); (8, 1);
+     ...]
+```
+
+# Exercise 7.3
+> 1. Extend MicroC with a for-loop, permitting for instance
+> ```csharp
+> for (i=0; i<100; i=i+1)
+>     sum = sum+i;
+> ```
+
+The first step to doing this is extending the lexer to accept the token "for":
+```
+let keyword s =
+    match s with
+    ...       
+    | "for"     -> FOR
+    | _         -> NAME s
+```
+And then inside the parser (`CPar.fsy`) we specify i as a token:
+```
+%token ... FOR
+```
+The general way we could parse a for loop of the type
+```
+for (e1; e2; e3) {
+    stmnt
+}
+```
+Is to first read the key word `FOR` then a pair of parentheses, and inside the parentheses read 3 seperate expressions of type `Expr` seperated by `;` and then a statement (the body of the loop), i.e.
+```
+FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM/StmtU
+```
+As the exercise mentioned a clever way of encoding a for loop into abstract syntax is using `Block`, `While` and `Expr` since a for loop can be written as:
+```
+{
+    e1;
+    while (e2) {
+        stmt
+        e3;
+    }
+}
+```
+We can translate this into abstract syntax and finish our extra production rules like so:
+```
+StmtM:  /* No unbalanced if-else */
+  ...
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtM  { Block([Stmt(Expr($3)); Stmt (While($5, Block([Stmt($9); Stmt(Expr($7))])))]) } (* Changed *)
+;
+```
+```
+StmtU:
+  ...
+  | FOR LPAR Expr SEMI Expr SEMI Expr RPAR StmtU  { Block([Stmt(Expr($3)); Stmt (While($5, Block([Stmt($9); Stmt(Expr($7))])))]) } /* changed */
+;
+
+```
+> 2. Rewrite your programs from Exercise 7.2 to use for-loops instead of while-loops.
+
+Each of the rewritten programs can be found within `Peak/iv2.c`, `Peak/iiv2.c` and `Peak/iiiv2.c`. The functions have their original names, but with a `2` added to the end. Please note we also implemented postfix increment and decrement form `7.4` and `7.5` so the rewritten exmaples use that. Mentally, `++a = a + 1`. We also implemented support for `+=`, `-=`, `*=`, `/=` and `%=`, i.e. compound assignments as per exercise 7.6.
+
+Below are some examples of us running the new programs proving that their results equals their counterpart from 7.2:
+```
+> run (fromFile "peak/iv2.c") [];;
+37 
+val it: Interp.store =
+  map
+    [(0, 7); (1, 13); (2, 9); (3, 8); (4, 0); (5, 37); (6, 4); (7, 0); (8, 5);
+     ...]
+
+> run (fromFile "peak/iiv2.c") [10];;
+285 
+val it: Interp.store =
+  map
+    [(0, 10); (1, 0); (2, 1); (3, 4); (4, 9); (5, 16); (6, 25); (7, 36);
+     (8, 49); ...]
+
+> run (fromFile "peak/iiiv2.c") [];;
+1 4 2 0 
+val it: Interp.store =
+  map
+    [(0, 1); (1, 2); (2, 1); (3, 1); (4, 1); (5, 2); (6, 0); (7, 0); (8, 1);
+     ...]
+```
