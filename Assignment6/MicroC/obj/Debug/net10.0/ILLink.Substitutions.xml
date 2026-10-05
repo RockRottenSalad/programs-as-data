@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="microcc">
+    <resource name="FSharpSignatureData.microcc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.microcc" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.microcc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.microcc" action="remove"></resource>
+    <resource name="FSharpOptimizationData.microcc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.microcc" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.microcc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.microcc" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.microcc" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.microcc" action="remove"></resource>
+  </assembly>
+</linker>
