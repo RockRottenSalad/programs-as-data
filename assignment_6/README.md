@@ -119,57 +119,172 @@ Used 0.03 seconds
 
 ### ex3.c breakdown
 
-The bytecode file can be found at `CEx/ex3.out`.
+**NOTE:** Please note that the bytecode for exercise 3 was generated using the `Contcomp.fs` compiler rather than the `Comp.fs` compiler by mistake. We did not want to rewrite the entirety of the exercise to change this, but now you know.
 
-```bash
-LDARGS 1; # loads the single argument for the main function, adds n to stack
-CALL (1, "L1"); # calls main function
-STOP;
-Label "L1"; # main function label
+When executing `compileToFile (fromFile "CEx/ex03.c") "CEx/ex3.out";;` we get the following symbolic bytecode:
+```fsharp
+> compileToFile (fromFile "CEx/ex03.c") "CEx/ex3.out";;
+val it: Machine.instr list =
+  [LDARGS 1; CALL (1, "L1"); STOP; Label "L1"; INCSP 1; GETBP; CSTI 1; ADD;
+   GETBP; LDI; STI; GETBP; LDI; GETBP; CSTI 2; ADD; CALL (2, "L2"); INCSP -1;
+   GETBP; CSTI 2; ADD; LDI; PRINTI; INCSP -2; GETBP; CSTI 1; ADD; LDI; PRINTI;
+   RET 2; Label "L2"; GETBP; CSTI 1; ADD; LDI; GETBP; LDI; GETBP; LDI; MUL;
+   STI; RET 2]
+```
+This code can be written in a more structured way with the corresponding MicroC code to the right:
 
-INCSP 1; GETBP; # Grow stack and put base pointer on top
-
-CSTI 1;
-ADD;
-CSTI 0;
-STI;
-INCSP -1;
-GOTO "L3";
-Label "L2";
-GETBP;
-CSTI 1;
-ADD;
-LDI;
-PRINTI;
-INCSP -1;
-GETBP;
-CSTI 1;
-ADD;
-GETBP;
-CSTI 1;
-ADD;
-LDI;
-CSTI 1;
-ADD;
-STI;
-INCSP -1;
-INCSP 0;
-Label "L3";
-GETBP;
-CSTI 1;
-ADD;
-LDI;
-GETBP;
-CSTI 0;
-ADD;
-LDI;
-LT;
-IFNZRO "L2";
-INCSP -1;
-RET 0
-
+```fs
+   LDARGS 1
+   CALL 1, L1                // calls main with its argument
+   STOP
+L1:
+   INCSP 1                   // void main(int n) {...};
+   GETBP; CSTI 1 ADD;        //         note: computes the stack address of i
+   CSTI 0; STI;              // i = 0;
+   INCSP -1                  //         note: STI stores the assignment value on the stack, this drops it
+   GOTO "L3"                 //         note: L3 is the guard of the while loop
+L2:                          //         note: L2 corresponds to the body of the while loop     
+   GETBP; CSTI 1; ADD;       //         note: compute stack address of i
+   LDI                       //         note: load value of i
+   PRINTI                    // print i; 
+   INCSP -1                  //         note: remove value of i from the stack
+   GETBP; CSTI 1; ADD        //         note: compute stack address of i
+   GETBP; CSTI 1; ADD        //         note: compute stack address of i
+   LDI                       //         note: load value of i
+   CSTI 1; ADD; STI;         // i = i + 1;
+   INCSP -1                  //         note: remove stored value from stack
+L3:                          //         note: L3 is the guard of the while loop                                      
+   GETBP; CSTI 1; ADD; LDI   //         note: compute stack address of i and load i
+   GETBP; LDI                //         note: compute stack address of n and load n
+   LT                        // i < n;  note: guard of the while loop
+   IFNZRO "L2"               //         note: if i < n, repeat from loop body
+   RET 1     
+```
+Executing the command `java Machinetrace CEx/ex3.out 4` yields the following trace of the stack:
+```fs
+[ ]{0: LDARGS}
+[ 4 ]{2: CALL 1 6}
+[ 5 -999 4 ]{6: INCSP 1}
+[ 5 -999 4 0 ]{8: GETBP}         // 0 is the value of i, i is at addr 3
+[ 5 -999 4 0 2 ]{9: CSTI 1}      // add 1 to stack
+[ 5 -999 4 0 2 1 ]{11: ADD}      // bp + 1 = address of i
+[ 5 -999 4 0 3 ]{12: CSTI 0}     // add 0 to the stack
+[ 5 -999 4 0 3 0 ]{14: STI}      // s[3] = 0, i.e. i = 0;
+[ 5 -999 4 0 0 ]{15: INCSP -1}   // remove the value stored from sti
+[ 5 -999 4 0 ]{17: GOTO 42}      // 
+[ 5 -999 4 0 ]{42: GETBP}        // add bp to the stack
+[ 5 -999 4 0 2 ]{43: CSTI 1}     // add 1 to the stack
+[ 5 -999 4 0 2 1 ]{45: ADD}      // compute bp + 1, which is the addr of i
+[ 5 -999 4 0 3 ]{46: LDI}        // load the value of i to the stack
+[ 5 -999 4 0 0 ]{47: GETBP}      // add the bp to the stack
+[ 5 -999 4 0 0 2 ]{48: LDI}      // load the value stored at bp, which is n = 4
+[ 5 -999 4 0 0 4 ]{49: LT}       // push the result of 0 < 4 to the stack, 0 if false, 1 if true
+[ 5 -999 4 0 1 ]{50: IFNZRO 19}  // since 0 < 4 it jumps to 19, which evaluates the body of the loop
+[ 5 -999 4 0 ]{19: GETBP}        
+[ 5 -999 4 0 2 ]{20: CSTI 1}
+[ 5 -999 4 0 2 1 ]{22: ADD}
+[ 5 -999 4 0 3 ]{23: LDI}        // 19-23 once again loads the values of i
+[ 5 -999 4 0 0 ]{24: PRINTI}     // prints i
+0 [ 5 -999 4 0 0 ]{25: INCSP -1} // removes value stored on the stack by print
+[ 5 -999 4 0 ]{27: GETBP}        // add bp to the stack
+[ 5 -999 4 0 2 ]{28: CSTI 1}     // add 1 to the stack
+[ 5 -999 4 0 2 1 ]{30: ADD}      // add bp + 1 to the stack, addr of i
+[ 5 -999 4 0 3 ]{31: GETBP}      // add bp to the stack
+[ 5 -999 4 0 3 2 ]{32: CSTI 1}   // add 1 to the stack
+[ 5 -999 4 0 3 2 1 ]{34: ADD}    // bp + 1, addr of i
+[ 5 -999 4 0 3 3 ]{35: LDI}      // load value stored at 3 (addr of i)
+[ 5 -999 4 0 3 0 ]{36: CSTI 1}   // add 1 to the stack
+[ 5 -999 4 0 3 0 1 ]{38: ADD}    // add 1 to i, 0 + 1 = 1
+[ 5 -999 4 0 3 1 ]{39: STI}      // store the value 1 at addr 3, i = 1
+[ 5 -999 4 1 1 ]{40: INCSP -1}   // cleanup
+[ 5 -999 4 1 ]{42: GETBP}        
+[ 5 -999 4 1 2 ]{43: CSTI 1}
+[ 5 -999 4 1 2 1 ]{45: ADD}        
+[ 5 -999 4 1 3 ]{46: LDI}        // 42-46, compute addr of i and loads its value
+[ 5 -999 4 1 1 ]{47: GETBP}     
+[ 5 -999 4 1 1 2 ]{48: LDI}      // 47-48, load value of n
+[ 5 -999 4 1 1 4 ]{49: LT}       // i < n = 1 < 4?
+[ 5 -999 4 1 1 ]{50: IFNZRO 19}  // since 1 < 4, we jump to 19
+[ 5 -999 4 1 ]{19: GETBP}        
+[ 5 -999 4 1 2 ]{20: CSTI 1}
+[ 5 -999 4 1 2 1 ]{22: ADD}      
+[ 5 -999 4 1 3 ]{23: LDI}       // 19-23, load value of i
+[ 5 -999 4 1 1 ]{24: PRINTI}    // print i
+1 [ 5 -999 4 1 1 ]{25: INCSP -1}// remove result of print
+[ 5 -999 4 1 ]{27: GETBP}      
+[ 5 -999 4 1 2 ]{28: CSTI 1}
+[ 5 -999 4 1 2 1 ]{30: ADD}     // 27-30, push addr of ito the stack
+[ 5 -999 4 1 3 ]{31: GETBP}     
+[ 5 -999 4 1 3 2 ]{32: CSTI 1}  
+[ 5 -999 4 1 3 2 1 ]{34: ADD}  
+[ 5 -999 4 1 3 3 ]{35: LDI}     // 31-35, load value of i
+[ 5 -999 4 1 3 1 ]{36: CSTI 1} 
+[ 5 -999 4 1 3 1 1 ]{38: ADD}
+[ 5 -999 4 1 3 2 ]{39: STI}     // 35-39, i = i + 1, *[3] = 1 + 1, i = 2 
+[ 5 -999 4 2 2 ]{40: INCSP -1}  // remove result of the assignment
+[ 5 -999 4 2 ]{42: GETBP}
+[ 5 -999 4 2 2 ]{43: CSTI 1}
+[ 5 -999 4 2 2 1 ]{45: ADD}
+[ 5 -999 4 2 3 ]{46: LDI}       // load value of variable i
+[ 5 -999 4 2 2 ]{47: GETBP}     
+[ 5 -999 4 2 2 2 ]{48: LDI}     // load vavlue of variable n
+[ 5 -999 4 2 2 4 ]{49: LT}      
+[ 5 -999 4 2 1 ]{50: IFNZRO 19} // i < n, 2 < 4? since yes, we jump to 19, again this is the guard
+[ 5 -999 4 2 ]{19: GETBP}       // we know enter the body of the while loop once again, this has been traced above and the logic is the same
+[ 5 -999 4 2 2 ]{20: CSTI 1}
+[ 5 -999 4 2 2 1 ]{22: ADD}
+[ 5 -999 4 2 3 ]{23: LDI}
+[ 5 -999 4 2 2 ]{24: PRINTI}
+2 [ 5 -999 4 2 2 ]{25: INCSP -1}
+[ 5 -999 4 2 ]{27: GETBP}
+[ 5 -999 4 2 2 ]{28: CSTI 1}
+[ 5 -999 4 2 2 1 ]{30: ADD}
+[ 5 -999 4 2 3 ]{31: GETBP}
+[ 5 -999 4 2 3 2 ]{32: CSTI 1}
+[ 5 -999 4 2 3 2 1 ]{34: ADD}
+[ 5 -999 4 2 3 3 ]{35: LDI}
+[ 5 -999 4 2 3 2 ]{36: CSTI 1}
+[ 5 -999 4 2 3 2 1 ]{38: ADD}
+[ 5 -999 4 2 3 3 ]{39: STI}
+[ 5 -999 4 3 3 ]{40: INCSP -1}
+[ 5 -999 4 3 ]{42: GETBP}         // again we enter the guard of the loop, i wont trace it again, since its the same logic
+[ 5 -999 4 3 2 ]{43: CSTI 1}
+[ 5 -999 4 3 2 1 ]{45: ADD}
+[ 5 -999 4 3 3 ]{46: LDI}
+[ 5 -999 4 3 3 ]{47: GETBP}
+[ 5 -999 4 3 3 2 ]{48: LDI}
+[ 5 -999 4 3 3 4 ]{49: LT}
+[ 5 -999 4 3 1 ]{50: IFNZRO 19}  // 3 < 4, i < n? since it is, we go into loop again
+[ 5 -999 4 3 ]{19: GETBP}
+[ 5 -999 4 3 2 ]{20: CSTI 1}
+[ 5 -999 4 3 2 1 ]{22: ADD}
+[ 5 -999 4 3 3 ]{23: LDI}
+[ 5 -999 4 3 3 ]{24: PRINTI}
+3 [ 5 -999 4 3 3 ]{25: INCSP -1}
+[ 5 -999 4 3 ]{27: GETBP}
+[ 5 -999 4 3 2 ]{28: CSTI 1}
+[ 5 -999 4 3 2 1 ]{30: ADD}
+[ 5 -999 4 3 3 ]{31: GETBP}
+[ 5 -999 4 3 3 2 ]{32: CSTI 1}
+[ 5 -999 4 3 3 2 1 ]{34: ADD}
+[ 5 -999 4 3 3 3 ]{35: LDI}
+[ 5 -999 4 3 3 3 ]{36: CSTI 1}
+[ 5 -999 4 3 3 3 1 ]{38: ADD}
+[ 5 -999 4 3 3 4 ]{39: STI}
+[ 5 -999 4 4 4 ]{40: INCSP -1}
+[ 5 -999 4 4 ]{42: GETBP}
+[ 5 -999 4 4 2 ]{43: CSTI 1}
+[ 5 -999 4 4 2 1 ]{45: ADD}
+[ 5 -999 4 4 3 ]{46: LDI}
+[ 5 -999 4 4 4 ]{47: GETBP}
+[ 5 -999 4 4 4 2 ]{48: LDI}
+[ 5 -999 4 4 4 4 ]{49: LT}
+[ 5 -999 4 4 0 ]{50: IFNZRO 19}  // 4 < 4, i < n? it isnt, so we return
+[ 5 -999 4 4 ]{52: RET 1}        
+[ 4 ]{5: STOP}
 ```
 
+Some interesting points to observe is the while loop, especially how we immediately evaluate the guard, then evaluate the body if the guard holds, and then repeat this process.
 
 ### ex5.c breakdown
 
