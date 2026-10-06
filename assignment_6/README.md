@@ -160,6 +160,9 @@ L3:                          //         note: L3 is the guard of the while loop
    IFNZRO "L2"               //         note: if i < n, repeat from loop body
    RET 1     
 ```
+
+> Trace the execution using `java Machinetrace ex3.out 4`, and explain the stack contents and what goes on in each step of execution, especially how the low-level bytecode instructions map to the higher-level features of MicroC.
+
 Executing the command `java Machinetrace CEx/ex3.out 4` yields the following trace of the stack:
 ```fs
 [ ]{0: LDARGS}
@@ -340,10 +343,6 @@ RET 1                    //return
 ````
 [explain how the inner block is visible]
 
-
-> Trace the execution using `java Machinetrace ex3.out 4`, and explain the stack contents and what goes on in each step of execution, especially how the low-level bytecode instructions map to the higher-level features of MicroC.
-
-ANSWER
 
 # Exercise 8.3
 
