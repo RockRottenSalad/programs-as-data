@@ -290,7 +290,55 @@ Some interesting points to observe is the while loop, especially how we immediat
 
 > Execute the compiled programs using `java Machine ex3.out 10` and similar. Note that these micro-C programs require a command line argument (an integer) when they are executed.
 
-ANSWER
+By executing ``compileToFile (fromFile "CEx/ex05.c") "CEx/ex5.out";;`` we get the following:
+````fsharp
+> compileToFile (fromFile "CEx/ex05.c") "CEx/ex05.out";;
+val it: Machine.instr list =
+  [LDARGS 1; CALL (1, "L1"); STOP; Label "L1"; INCSP 1; GETBP; CSTI 1; ADD;
+   GETBP; CSTI 0; ADD; LDI; STI; INCSP -1; INCSP 1; GETBP; CSTI 0; ADD; LDI;
+   GETBP; CSTI 2; ADD; CALL (2, "L2"); INCSP -1; GETBP; CSTI 2; ADD; LDI;
+   PRINTI; INCSP -1; INCSP -1; GETBP; CSTI 1; ADD; LDI; PRINTI; INCSP -1;
+   INCSP -1; RET 0; Label "L2"; GETBP; CSTI 1; ADD; LDI; GETBP; CSTI 0; ADD;
+   LDI; GETBP; CSTI 0; ADD; LDI; MUL; STI; INCSP -1; INCSP 0; RET 1]
+````
+Here is an explanation of the byte code, 
+it is recommended to read this while having `ex05.c` in view:
+````fsharp
+LDARGS 1;          //adds argument to stack
+CALL (1, "L1");    //calls main
+STOP;              //end after
+Label "L1";          //start of main
+INCSP 1;             //int r;
+GETBP; CSTI 1; ADD;  //push r to address bp +1
+GETBP; CSTI 0; ADD;  //push n to address bp +0
+LDI;                 //get rvalue at address n
+STI;                 //store value n in address r
+INCSP -1;            //pop leftover
+INCSP 1;                    //inner block, int r;
+GETBP; CSTI 0; ADD; LDI;    //push arg 1  (the order might be revered)
+GETBP; CSTI 2; ADD;         //push arg 2  (check later #TODO!!!!)
+CALL (2, "L2");             //call square(...)
+INCSP -1;            
+GETBP; CSTI 2; ADD; LDI;    //push r
+PRINTI;                     //print inner r
+INCSP -1;                 
+INCSP -1;                   //end of block
+GETBP; CSTI 1; ADD; LDI; //push r
+PRINTI;                  //print outer r
+INCSP -1;
+INCSP -1;
+RET 0;                   //end of function, return
+Label "L2";              //start of square(...)
+GETBP; CSTI 1; ADD; LDI; //push rp
+GETBP; CSTI 0; ADD; LDI; //push i
+GETBP; CSTI 0; ADD; LDI; //push i again
+MUL;                     //multiply i with i
+STI;                     //store the value i*i in rp
+INCSP -1;
+INCSP 0;
+RET 1                    //return
+````
+[explain how the inner block is visible]
 
 
 > Trace the execution using `java Machinetrace ex3.out 4`, and explain the stack contents and what goes on in each step of execution, especially how the low-level bytecode instructions map to the higher-level features of MicroC.
