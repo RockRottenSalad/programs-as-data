@@ -415,4 +415,78 @@ As expected! :)
 
 > Compile `ex8.c` and study the symbolic bytecode to see why it is so much slower than the handwritten 20 million iterations loop in prog1.
 
+In the handwritten Prog1, there's a single `goto` statement and generally
+speaking a lot fewer instructions per iteration. Whereas here, there's of 3 label
+and lot of gotos. As well as a lot more instructions per iteration, which
+overall makes it run slower.
+
+```
+ LDARGS 0; CALL (0, "L1"); STOP;
+
+ Label "L1"; 
+   INCSP 1; GETBP; CSTI 0; ADD;
+   CSTI 20000000; STI; INCSP -1;
+   GOTO "L3";
+
+Label "L2"; 
+   GETBP; CSTI 0; ADD;
+   GETBP; CSTI 0; ADD; LDI; CSTI 1; SUB; STI; INCSP -1; INCSP 0;
+
+Label "L3";
+   GETBP; CSTI 0; ADD; LDI; IFNZRO "L2"; INCSP -1; RET -1
+```
+
 > Compile ex13.c and study the symbolic bytecode to see how loops and conditionals interact; describe what you see.
+
+Ex13 is a program that prints out all the leap years from 1889
+until but not including the given year `n`.
+
+This bytecode isn't optimal.
+
+- Label 8 is literally just a `GOTO "L6"` instruction. And then each time there's a `GOTO "L8"`, it immedaitely performs a `GOTO "L6"`, we could just performed a `GOTO "L6"` to begin with, as it would reduce the amount of instructions and thus be more efficient.
+
+```
+LDARGS 1; CALL (1, "L1"); # Load argument into main and call main
+STOP; #  
+
+Label "L1"; 
+   INCSP 1; GETBP; CSTI 1; ADD;
+   CSTI 1889; STI; INCSP -1; GOTO "L3";
+
+Label "L2"; 
+   GETBP; CSTI 1; ADD; GETBP;
+   CSTI 1; ADD; LDI; CSTI 1; ADD; STI; INCSP -1;
+   GETBP; CSTI 1; ADD; LDI;
+   CSTI 4; MOD; CSTI 0; EQ;
+
+   IFZERO "L7";
+       GETBP; CSTI 1; ADD; LDI; CSTI 100;
+       MOD; CSTI 0; EQ; NOT;
+
+   IFNZRO "L9";
+       GETBP; CSTI 1; ADD; LDI; CSTI 400; MOD;
+       CSTI 0; EQ;
+       GOTO "L8";
+
+Label "L9"; CSTI 1;
+
+Label "L8"; GOTO "L6";
+
+Label "L7"; CSTI 0;
+
+Label "L6";
+IFZERO "L4"; GETBP; CSTI 1; ADD; LDI; PRINTI; INCSP -1; GOTO "L5";
+
+Label "L4"; INCSP 0;
+
+Label "L5"; INCSP 0;
+
+Label "L3";
+    GETBP; CSTI 1; ADD; LDI; GETBP; CSTI 0; ADD; LDI; LT; 
+
+    IFNZRO "L2";
+        INCSP -1; RET 0
+
+```
+
+
