@@ -341,14 +341,10 @@ INCSP -1;
 INCSP 0;
 RET 1                    //return
 ````
-[explain how the inner block is visible]
-
 
 # Exercise 8.3
 
-> The abstract syntax fore preincrement `++e` and predecrement `--e` was introduced in Exercise 7.4.
-
-> Modify the compiler (function `cExpr`) to generate code for `PreInc(acc)` and `PreDec(acc)`.
+> The abstract syntax fore preincrement `++e` and predecrement `--e` was introduced in Exercise 7.4. Modify the compiler (function `cExpr`) to generate code for `PreInc(acc)` and `PreDec(acc)`.
 
 There's only one place where we need to change something and that's in `cExpr`, the function for compiling expressions.
 
