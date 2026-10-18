@@ -84,6 +84,8 @@ compileToFile and fromFile from ParseAndComp.fs as above. Study the generated sy
 way with labels only at the beginning of the line (as in this chapter). Write the
 corresponding micro-C code to the right of the stack machine code.
 
+**NOTE:** Please note that the bytecode for exercise 3 was generated using the `Contcomp.fs` compiler rather than the `Comp.fs` compiler by mistake. We did not want to rewrite the entirety of the exercise to change this, but now you know.
+
 When executing `compileToFile (fromFile "CEx/ex05.c") "CEx/ex5.out";;` we get the following symbolic bytecode:
 ```fsharp
 > compileToFile (fromFile "CEx/ex05.c") "CEx/ex5.out";;
@@ -303,7 +305,7 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) : instr list =
         @ [DUP; LDI; CSTI 1; SUB; STI]
 ```
 We must also modify the compiler that uses continuations:
-```
+```fs
 and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (c : instr list) : instr list =
     ...
     | PreInc acc -> cAccess acc varEnv funEnv (DUP :: LDI :: CSTI 1 :: ADD :: STI :: c) // CHANGED
