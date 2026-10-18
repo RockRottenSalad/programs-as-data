@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/MicroC/">
+    <Project Path="MicroC/microcc.fsproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,15 @@
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\bin\Release\net10.0\Selsort.exe
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\bin\Release\net10.0\Selsort.deps.json
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\bin\Release\net10.0\Selsort.runtimeconfig.json
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\bin\Release\net10.0\Selsort.dll
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\bin\Release\net10.0\Selsort.pdb
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.AssemblyInfoInputs.cache
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.AssemblyInfo.cs
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.csproj.CoreCompileInputs.cache
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.sourcelink.json
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.dll
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\refint\Selsort.dll
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.pdb
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\Selsort.genruntimeconfig.cache
+C:\Users\August\Desktop\programs-as-data\Assignment7\Virtual\Selsort\obj\Release\net10.0\ref\Selsort.dll
