@@ -27,7 +27,9 @@ let keyword s =
     | "return"  -> RETURN
     | "true"    -> CSTBOOL 1
     | "void"    -> VOID 
-    | "while"   -> WHILE         
+    | "while"   -> WHILE
+    | "switch"  -> SWITCH        (* CHANGED *)
+    | "case"    -> CASE          (* CHANGED *)
     | _         -> NAME s
  
 let cEscape s = 
@@ -77,6 +79,8 @@ rule Token = parse
   | "//"            { EndLineComment lexbuf; Token lexbuf }
   | "/*"            { Comment lexbuf; Token lexbuf }
   | '"'             { CSTSTRING (String [] lexbuf) }
+  | ':'             { COLON }                        (* CHANGED *)
+  | '?'             { QUEST }                        (* CHANGED *)
   | eof             { EOF }
   | _               { failwith "Lexer error: illegal symbol" }
 

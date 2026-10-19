@@ -125,7 +125,7 @@ let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) : instr list =
       cExpr e varEnv funEnv @ [IFZERO labelse] 
       @ cStmt stmt1 varEnv funEnv @ [GOTO labend]
       @ [Label labelse] @ cStmt stmt2 varEnv funEnv
-      @ [Label labend]           
+      @ [Label labend]
     | While(e, body) ->
       let labbegin = newLabel()
       let labtest  = newLabel()
@@ -147,6 +147,20 @@ let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) : instr list =
       [RET (snd varEnv - 1)]
     | Return (Some e) -> 
       cExpr e varEnv funEnv @ [RET (snd varEnv)]
+    | Switch(e, cases) -> (* CHANGED *)
+        let labend = newLabel()
+        let rec aux cases =
+            match cases with
+            | [] -> []
+            | (x, body) :: rest ->
+                let labnext = newLabel()
+                [DUP; CSTI x; EQ; IFZERO labnext]
+                @ [INCSP -1]                        (* Remove result of expression from stack, as this is a statement *)
+                @ cStmt body varEnv funEnv @ [GOTO labend]
+                @ [Label labnext] @ aux rest 
+        cExpr e varEnv funEnv @ aux cases @ [Label labend]
+        
+                
 
 and cStmtOrDec stmtOrDec (varEnv : varEnv) (funEnv : funEnv) : varEnv * instr list = 
     match stmtOrDec with 
@@ -209,6 +223,13 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) : instr list =
       @ cExpr e2 varEnv funEnv
       @ [GOTO labend; Label labtrue; CSTI 1; Label labend]
     | Call(f, es) -> callfun f es varEnv funEnv
+    | Iffy (e1, e2, e3)->
+      let labelse = newLabel()
+      let labend  = newLabel()
+      cExpr e1 varEnv funEnv @ [IFZERO labelse] 
+      @ cExpr e2 varEnv funEnv @ [GOTO labend]
+      @ [Label labelse] @ cExpr e3 varEnv funEnv
+      @ [Label labend]
 
 (* Generate code to access variable, dereference pointer or index array.
    The effect of the compiled code is to leave an lvalue on the stack.   *)
