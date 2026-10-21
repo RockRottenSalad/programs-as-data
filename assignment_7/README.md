@@ -29,9 +29,8 @@ Now we need to register the tokens in the parser.
 %token COLON QUESTION
 ```
 
-We also need to ensure that the precedence is correct. We want `?` and
-`:` to bind tighter than all of the binary operators and unary operators,
-but not tighter than a print or assignment.
+We also need to ensure that the precedence is correct. We want all binary
+operators and unary operators to bind tigther than `?` and `:`.
 
 ```
 %right ASSIGN             /* lowest precedence */
