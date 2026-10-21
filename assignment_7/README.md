@@ -183,7 +183,7 @@ The idea here is simple.
     - Jump to the end of the switch statement using the label generated in step 1.
 4. Now the switch statement is over, we pop off 1 element from the stack. This is the value that was being switched on.
 
-```
+```fsharp
 let rec cStmt stmt (varEnv : varEnv) (funEnv : funEnv) : instr list = 
     ...
     | Switch(v, cases) ->
