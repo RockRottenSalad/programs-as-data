@@ -284,3 +284,72 @@ $ java Machine.java switch_test 4
 
 Used 0.002 seconds
 ```
+
+# Exercise 9.3
+> Fix QueueWithMistake.java
+
+The memory leak stems from the get method.
+
+This is the behaviour of the put method. It simply updates the tail pointer as well as making the Sentinel point to the new node.
+```
+put
+Before
+h   t
+  S
+
+After
+h    t
+S -> n
+```
+
+However when we run get, we naively update the head to point to `head.next`. The problem is that we still have access to our sentinel value and that points to the node that was supposedly removed, thus the garbage collector cannot free this node since it's still reachable.
+
+```
+get
+Before
+h        t
+|-> S -> n
+
+After
+   h  t
+S->  n  | n just leaked
+```
+
+The fix is to simply keep in mind that we're using a sentinel value for the head, and simply update the head's next pointer to `head.next.next`.
+
+```java
+public synchronized int get() {
+    if (head.next == null) 
+      return -999;
+
+    // fix
+    // Before
+    // h        t
+    // |-> S -> n
+    //
+    // After
+    // h   t
+    // |-> S
+    int value = head.next.item;
+    head.next = head.next.next;
+
+    // When list is empty, both tail and head should point to the sentinel
+    if(head.next == null) tail = head;
+
+    return value;
+
+    // mistake
+    // Before
+    // h        t
+    // |-> S -> n
+    //
+    // After
+    //     h  t
+    // S->  n    | n just leaked
+    //    Node first = head;
+    //    head = first.next;
+    //    return head.item;
+}
+```
+
+
