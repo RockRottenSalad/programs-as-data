@@ -302,7 +302,7 @@ h    t
 S -> n
 ```
 
-However when we run get, we naively update the head to point to `head.next`. The problem is that we still have access to our sentinel value and that points to the node that was supposedly removed, thus the garbage collector cannot free this node since it's still reachable.
+However, when we run the get method we naively update the head to point to `head.next`. The problem is that we still have access to our sentinel value and that points to the node that was supposedly removed, thus the garbage collector cannot free this node since it's still reachable.
 
 ```
 get
@@ -315,7 +315,7 @@ After
 S->  n  | n just leaked
 ```
 
-The fix is to simply keep in mind that we're using a sentinel value for the head, and simply update the head's next pointer to `head.next.next`.
+The fix is to simply keep in mind that we're using a sentinel value for the head. So we just update the head's next pointer to `head.next.next` instead.
 
 ```java
 public synchronized int get() {
