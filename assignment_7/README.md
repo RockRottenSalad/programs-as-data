@@ -286,6 +286,15 @@ Used 0.002 seconds
 ```
 
 # Exercise 9.1
+> (i) From a Visual Studio Command Prompt, compile it using Microsoft’s C# com-
+piler with the optimize flag (/o), then disassemble it, saving the output to file
+Selsort.il:
+> 
+> (ii) Now do the same with the corresponding Java method in file Selsort.java.
+Compile it, then disassemble the Selsort class:
+
+Please see the files with comments inside of `Selsort.il` and `Selsort.jvmbytecode`.
+
 JVM Bytecode explained:
 ```java
   public static void SelectionSort(int[]);
