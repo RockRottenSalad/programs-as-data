@@ -285,6 +285,61 @@ $ java Machine.java switch_test 4
 Used 0.002 seconds
 ```
 
+# Exercise 9.1
+JVM Bytecode explained:
+```java
+  public static void SelectionSort(int[]);
+    descriptor: ([I)V
+    flags: (0x0009) ACC_PUBLIC, ACC_STATIC
+    Code:
+      stack=4, locals=4, args_size=1
+         0: iconst_0	
+         1: istore_1    	// int i = 0
+         2: iload_1     	// load value of i
+         3: aload_0     	// load length of array
+         4: arraylength 	// compute arraylength
+         5: if_icmpge     57    // if arraylength >= i, i.e. (i < arraylength)
+         8: iload_1             // load value of i which is at address 1
+         9: istore_2            // least = value of i
+        10: iload_1             // load value of i
+        11: iconst_1            // push 1 to the stack
+        12: iadd                // compute i + 1
+        13: istore_3            // j = i + 1 (assign j to be that result, j is at address 3)
+        14: iload_3             // load value of j
+        15: aload_0             // load array
+        16: arraylength         // compute arraylength and push to stack
+        17: if_icmpge     37    // if arraylength >= j continue, i.e. (j < arraylength)
+        20: aload_0             // load array
+        21: iload_3             // load value of j
+        22: iaload              // get array[j]
+        23: aload_0             // get value of array
+        24: iload_2             // get value of least
+        25: iaload              // get array[least]
+        26: if_icmpge     31    // if (array[least] >= array[j]), i.e. array[j] < array[least] else go to 31
+        29: iload_3             // load value of j
+        30: istore_2            // store j in least
+        31: iinc          3, 1  // increment j
+        34: goto          14    // repeat loop body
+        37: aload_0             
+        38: iload_1
+        39: iaload
+        40: istore_3
+        41: aload_0
+        42: iload_1
+        43: aload_0
+        44: iload_2
+        45: iaload
+        46: iastore
+        47: aload_0
+        48: iload_2
+        49: iload_3
+        50: iastore            // all the above do: int tmp = arr[i]; arr[i] = arr[least]; arr[least] = tmp;
+        51: iinc          1, 1 // i = i + 1
+        54: goto          2    // repeat loop body for i
+        57: return             // return
+}
+```
+
 # Exercise 9.3
 > Fix QueueWithMistake.java
 
