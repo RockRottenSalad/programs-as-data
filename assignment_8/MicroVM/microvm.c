@@ -233,7 +233,6 @@ int numGC=0;  // Glocal counter on number of GC.
 // is to have a buffer for this not to happen. 
 #define STACKSAFETYSIZE 200
 #define STACKSIZE 2000000
-  
 // Print the stack machine instruction at p[pc]
 void printInstruction(word p[], word pc) {
   switch (p[pc]) {
@@ -495,7 +494,7 @@ void heapStatistics() {
 	   blocks, blocksSize, free, freeSize, largestFree, orphans);
 }
 
-void initheap() {
+void initheap() { //CHANGED
   heap = (word*)malloc(sizeof(word)*HEAPSIZE);
   afterHeap = &heap[HEAPSIZE];
   // Initially, entire heap is one block on the freelist:
@@ -504,12 +503,54 @@ void initheap() {
   freelist = &heap[0];
 }
 
+void mark(word *block){ //CHANGED
+  if (Color(*block) == Black) return;
+  *block = Paint(*block, Black);
+  int max = Length(*block);
+  for(int i = 1; i<=max;i++){
+    if (!IsInt(block[i]) && block[i] != NILVALUE && inHeap((word *)block[i])){
+      mark((word *)block[i]);
+    }
+  }
+}
+
 void markPhase(word s[], word sp) {
+  for(int i = 0; i<=sp; i++){
+    if(!IsInt(s[i]) && s[i]!= NILVALUE && inHeap((word *)s[i])){
+      mark(((word *) s[i]));
+    }
+  }
   if (!silent) printf("GC[");
   if (!silent) printf("M");
 }
 
-void sweepPhase() {
+void sweepPhase() { // CHANGED
+  word *p = (word *)heap;
+  while(inHeap(p)){
+    int size = Length(p[0]);
+
+    if(Color(p[0])==Black){
+      p[0] = Paint(p[0], White);
+      p += size +1;
+      continue;
+    }
+    
+    if (Color(p[0]) == White) {
+      word *tmp = p;
+      int amount = 0;
+      while (Color(tmp[0]) == White && inHeap(tmp)) {
+        int s = Length(tmp[0]);
+        amount += s + 1;
+        tmp += s + 1;
+      }
+      p[0] = mkheader(0, amount-1, Blue);
+      p[1] = (word)freelist;
+      freelist = p;
+      p = tmp; 
+      continue;
+      }
+    p += size + 1;
+  }
   if (!silent) printf(",");
   if (!silent) printf("BS]");
 }
