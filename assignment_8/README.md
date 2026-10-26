@@ -170,4 +170,151 @@ word* allocate(unsigned int tag, uword length, word s[], word sp) {
 ```
 
 # Exercise 10.2
-> Add a simple mark-sweep garbage collector to listmachine.c like this:
+> Add a simple mark-sweep garbage collector
+
+First we define a `block_should_be_marked` function which indicates whether if
+a block should be marked or not. It does so by making sure the block is a
+non-nil pointer and that it hasn't already been marked before(i.e. the block is
+still white). The last check mentioned is to ensure we our mark phase doesn't
+get stuck in an infinite loop when dealing with cyclic data structures.
+
+
+```c
+bool block_should_be_marked(word block) {
+    return !IsInt(block) && block != NILVALUE && Color(*(word*)block) == White; 
+}
+```
+
+Afterwards we define a function that marks a block by first coloring it black
+and then iterating through the whole block for additional blocks that need to
+be recursively marked.
+
+```c
+void mark(word *block) {
+    word block_length = Length(*block);
+    *block = Paint(*block, Black);
+
+    for(word i = 1; i <= block_length; i++) {
+        if(block_should_be_marked(block[i])) {
+            mark((word*)block[i]);
+        }
+    }
+}
+```
+
+
+Finally the entirety of the mark phase can be implemented by searching through
+the stack for blocks that need to be marked.
+
+```c
+void markPhase(word s[], word sp) {
+  if (!silent) printf("GC[");
+
+  // GC phase 1: mark phase
+  // Assume all objects are white
+  // Find objects reachable from stack and color them black
+  for(word i = 0; i < sp; i++) {
+      if (block_should_be_marked(s[i])) {
+          mark((word*)s[i]);
+      }
+  }
+
+  if (!silent) printf("M");
+}
+```
+
+Now we implement the sweep phase. We do this by iterating through the entire
+heap and building a new freelist. Blue blocks that aren't orphans were already
+on the freelist, so we simply add those to the new freelist. White blocks are
+colored blue and then added to the freelist. Finally black blocks are simply
+colored white again so our assumption in the sweep phase about blocks initially
+being white holds.
+
+```c
+void sweepPhase() {
+  if (!silent) printf(",");
+
+  // GC phase 2: sweep phase
+  // Scan entire heap, put all white objects on the freelist, and color black objects white
+  word *block = heap;
+  word *new_freelist = NULL;
+    
+  while (block < afterHeap) {
+      word block_length = Length(*block);
+      word color = Color(*block);
+
+      switch (color) {
+          case Black:
+              *block = Paint(*block, White);
+            break;
+          case White:
+              *block = Paint(*block, Blue);
+          case Blue:
+              // make sure block isn't orphan
+              if (block_length > 0) {
+                  block[1] = (word)new_freelist;
+                  new_freelist = block;
+              }
+            break;
+          default:
+      }
+      // +1 to account for the fact that the header isn't included in the block  length
+      block += block_length + 1;
+  }
+
+  freelist = new_freelist;
+  if (!silent) printf("BS]");
+}
+```
+
+# Exercise 10.3
+
+> Improve the sweep phase so that it joins adjacent dead blocks into a single dead block.
+
+This is rather simple to implement. Since we always insert into the front of the new freelist, the head of the new freelist will be equal to the previous block we added.
+
+We simply check that the length of the block at the head of the list plus 1 to account for the header yields the block we're currently inspecting. If it does, then we know that the blocks are adjacent and we merge them by simply updating the length in the header of the block in the freelist.
+
+If they aren't adjacent, then we just do what we did earlier and append the block to the front of the list.
+
+```c
+void sweepPhase() {
+  if (!silent) printf(",");
+
+  // GC phase 2: sweep phase
+  // Scan entire heap, put all white objects on the freelist, and color black objects white
+  word *block = heap;
+  word *new_freelist = NULL;
+  word freelist_head_block_length = 0;
+    
+  while (block < afterHeap) {
+      word block_length = Length(*block);
+      word color = Color(*block);
+
+      switch (color) {
+          case Black:
+              *block = Paint(*block, White);
+            break;
+          case White:
+              *block = Paint(*block, Blue);
+          case Blue:
+              if(new_freelist != NULL && new_freelist + Length(*new_freelist) + 1 == block) {
+                  *new_freelist = mkheader(0, Length(*new_freelist) + block_length + 1, Blue);
+              } else if (block_length > 0) { // ensure block isn't orphan
+                  block[1] = (word)new_freelist;
+                  new_freelist = block;
+              }
+            break;
+          default:
+      }
+
+      // +1 to account for the fact that the header isn't included in the block  length
+      block += block_length + 1;
+  }
+
+  freelist = new_freelist;
+
+  if (!silent) printf("BS]");
+}
+```
+

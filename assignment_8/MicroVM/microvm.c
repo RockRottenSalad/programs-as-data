@@ -541,6 +541,7 @@ void sweepPhase() {
   // Scan entire heap, put all white objects on the freelist, and color black objects white
   word *block = heap;
   word *new_freelist = NULL;
+  word freelist_head_block_length = 0;
     
   while (block < afterHeap) {
       word block_length = Length(*block);
@@ -552,8 +553,13 @@ void sweepPhase() {
             break;
           case White:
               *block = Paint(*block, Blue);
-              block[1] = (word)new_freelist;
-              new_freelist = block;
+          case Blue:
+              if(new_freelist != NULL && new_freelist + Length(*new_freelist) + 1 == block) {
+                  *new_freelist = mkheader(0, Length(*new_freelist) + block_length + 1, Blue);
+              } else if (block_length > 0) { // ensure block isn't orphan
+                  block[1] = (word)new_freelist;
+                  new_freelist = block;
+              }
             break;
           default:
       }
