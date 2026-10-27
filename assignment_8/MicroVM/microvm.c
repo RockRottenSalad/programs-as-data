@@ -137,7 +137,7 @@ word* readfile(char* filename);
 #define NILVALUE 0  // Used for NIL in micro-SML and null in micro-Java.
 
 // Heap size in words
-#define HEAPSIZE 1000
+#define HEAPSIZE 20000
 
 word* heap;
 word* afterHeap;
@@ -541,7 +541,6 @@ void sweepPhase() {
   // Scan entire heap, put all white objects on the freelist, and color black objects white
   word *block = heap;
   word *new_freelist = NULL;
-  word freelist_head_block_length = 0;
     
   while (block < afterHeap) {
       word block_length = Length(*block);
@@ -555,8 +554,20 @@ void sweepPhase() {
               *block = Paint(*block, Blue);
           case Blue:
               if(new_freelist != NULL && new_freelist + Length(*new_freelist) + 1 == block) {
+                  // This current block is adjacent to the previous block we looked at.
+                  // So we just merge the previous blcok we the current block.
                   *new_freelist = mkheader(0, Length(*new_freelist) + block_length + 1, Blue);
               } else if (block_length > 0) { // ensure block isn't orphan
+                  // Non-orphan block and non-adjacent.
+                  // So we just append it to the front of the list.
+                  block[1] = (word)new_freelist;
+                  new_freelist = block;
+              } else if (block + 1 < afterHeap && Color(*(block + 1)) != Black) { // Orphan case
+                  // In the edge case where where we have an orphan and we don't have a previous block to merge it with.
+                  // Therefore we need to lookahead and see if there's an adjacent free block to the right of it,
+                  // if there is, then merge with the right block.
+                  block_length = Length(*block) + Length(*(block + 1)) + 1;
+                  *block = mkheader(0, block_length + 1, Blue);
                   block[1] = (word)new_freelist;
                   new_freelist = block;
               }
