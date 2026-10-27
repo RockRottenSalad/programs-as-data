@@ -46,12 +46,14 @@ when `CONS` or `HEAPALLOC`
 when there is no more free space, the mutator calls the garbage collector, then attempts to allocate space again.
 
 # 10.2
-```shell
-gcc -Wall microvm.c -o microvm
-```
-```shell
-./microvm ex55.out 10
-```
+>Add a simple mark-sweep garbage collector to listmachine.c
+
+I will be using microvm.c instead. In `markPhase` we'll iterate through the word array `s[]`, for each word check if all the following are true for `s[i]`:
+* Is not an int.
+* Is not `NILVALUE`.
+* Is in heap.
+
+Then mark `s[i]`.
 ```C
 void markPhase(word s[], word sp) {
   for(int i = 0; i<=sp; i++){
@@ -63,6 +65,10 @@ void markPhase(word s[], word sp) {
   if (!silent) printf("M");
 }
 ```
+Where mark is a function that paints a block black. Incase of cylic structures, if it's already black simply return. 
+Otherwise we check that `block[i]` isn't `NILVALUE` and is in heap. 
+For the length in header, if `block[i]` is refering to an addresse, by checking if it's not an int, then paint it black.
+This concludes the mark phase.
 ```C
 void mark(word *block){ //CHANGED
   if (Color(*block) == Black) return;
@@ -75,6 +81,11 @@ void mark(word *block){ //CHANGED
   }
 }
 ```
+
+For the sweep phase we go through each header in heap.
+If color is black, we now paint it as white for next phase, and continue to next iteration.
+If color is white, we change the color to blue and add it to the freelist.
+
 ```C
 void sweepPhase() { // CHANGED
   word *p = (word *)heap;
@@ -98,8 +109,20 @@ void sweepPhase() { // CHANGED
   if (!silent) printf("BS]");
 }
 ```
-
+To run the program first compile microvm.c:
+```shell
+gcc -Wall microvm.c -o microvm
+```
+Then run with:
+```shell
+./microvm ex55.out 10
+```
 # 10.3
+> Improve the sweep phase so that it joins adjacent dead blocks into a single dead block. More precisely, when sweep finds a white (dead) block of length n at address p, it checks whether there is also a white block at address p + 1 + n, and if so joins them into one block.
+
+If the color is white we now use a while loop.
+The loop keep tracks of total amount of blocks needed to be merged, `amount`.
+When the next block is not white, use `mkheader(...)` function to update old header, where the length is `amount`.
 ```c
 void sweepPhase() { // CHANGED
   word *p = (word *)heap;
