@@ -301,7 +301,7 @@ let rec eval (e : expr) (cont : cont) (econt : econt) =
       ) econt
 ```
 
-We can then test this by re-implementing our program from earlier which found the first multiple of 7.
+We can then test this by re-implementing our program from earlier which found the first multiple of `7` that is greater than `50`.
 
 ```fsharp
 Write(Prim("<", CstI 50, Prim1("multiples", CstI 7)))
