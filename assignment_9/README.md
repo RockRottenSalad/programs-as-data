@@ -301,3 +301,16 @@ let rec eval (e : expr) (cont : cont) (econt : econt) =
       ) econt
 ```
 
+We can then test this by re-implementing our program from earlier which found the first multiple of 7.
+
+```fsharp
+Write(Prim("<", CstI 50, Prim1("multiples", CstI 7)))
+```
+
+And see that we get what we expect:
+
+```fsharp
+> run (Write(Prim("<", CstI 50, Prim1("multiples", CstI 7))));;
+56 val it: value = Int 56
+```
+
