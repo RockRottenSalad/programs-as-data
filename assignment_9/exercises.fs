@@ -13,7 +13,7 @@ let rec len xs =
 let rec lenc xs (cont : int -> int) =
    match xs with
    | [] -> cont 0
-   | x :: xs -> lenc xs (fun x -> 1 + cont x)
+   | x :: xs -> lenc xs (fun x -> cont (x + 1))
 
 
 
@@ -38,7 +38,8 @@ let rec rev xs =
 let rec revc xs (cont : 'a list -> 'a list) =
     match xs with
     | [] -> cont []
-    | x :: xs -> revc xs (fun v -> x :: cont v)
+    | x :: xs -> revc xs (fun v -> cont (v @ [x]))
+
 
 
 // Exercise 11.2.iii
@@ -61,7 +62,7 @@ let rec prod xs =
 let rec prodc xs (cont : int -> int) =
     match xs with
     | [] -> cont 1
-    | x :: xs -> prodc xs (fun v -> x * cont v)
+    | x :: xs -> prodc xs (fun v ->  cont (v * x))
 
 
 // Exercise 11.4

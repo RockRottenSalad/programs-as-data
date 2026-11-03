@@ -12,24 +12,24 @@ adds `1` for each element in the list.
 let rec lenc xs (cont : int -> int) =
    match xs with
    | [] -> cont 0
-   | x :: xs -> lenc xs (fun x -> 1 + cont x)
+   | x :: xs -> lenc xs (fun x -> cont (x + 1))
 ```
 
 > (ii) What happens if you call it as `lenc xs (fun v -> 2*v)`
 
-With our implementation, it still works as intended. The provided intial continuation function is applied with the argument `0`, and since `2*0 = 0`, we add `0` to the final result.
+With our implementation, the final value ends up being doubled. The provided intial continuation function is applied with the final accumulated result `2`, and since `2*2 = 4`, we get `4` as the final result.
 
 ```fsharp
 lenc [1;2] (fun v -> 2*v)
-lenc [2] (fun x -> 1 + (fun v -> 2*v) x )
-lenc [] (fun x -> 1 + (fun x -> 1 + (fun v -> 2*v) x) x )
-(fun x -> 1 + (fun x -> 1 + (fun v -> 2*v) x) x ) 0
-(1 + (fun x -> 1 + (fun v -> 2*v) x) 0 )
-(1 + (1 + (fun v -> 2*v) 0) )
-(1 + (1 + (2*0)) )
-(1 + (1 + 0) )
-(1 + 1)
-2
+lenc [2] (fun x -> (fun v -> 2*v) (x + 1))
+lenc [] (fun x -> (fun x -> (fun v -> 2*v) (x + 1)) (x + 1))
+(fun x -> (fun x -> (fun v -> 2*v) (x + 1)) (x + 1)) 0
+(fun x -> (fun v -> 2*v) (x + 1)) (0 + 1)
+(fun x -> (fun v -> 2*v) (x + 1)) 1
+(fun v -> 2*v) (1 + 1)
+(fun v -> 2*v) 2
+2 * 2
+4
 ```
 
 > (iii) Write also a tail-recursive version `leni : int list -> int -> int` of the length function, whose second parameter is an accumulating parameter. The function should be called as `leni xs 0`. What is the relation between `lenc` and `leni`?
@@ -41,7 +41,6 @@ let rec leni xs (acc : int) =
    match xs with
    | [] -> acc
    | x :: xs -> leni xs (acc + 1)
-
 ```
 
 The relation between `leni` and `lenc` is that both fuctions are tail-recursive, unlike the original `len` function.
@@ -60,27 +59,24 @@ effectively reverse the list.
 let rec revc xs (cont : 'a list -> 'a list) =
     match xs with
     | [] -> cont []
-    | x :: xs -> revc xs (fun v -> x :: cont v)
+    | x :: xs -> revc xs (fun v -> cont (v @ [x]))
 ```
 
 > (ii) What happens if you call it as `revc xs (fun v -> v @ v)` instead?
 
-In our implementation, nothing changes. It still works as
-expected. This is because the intially given continuation
-function will be applied with the argument `[]`, i.e. we're
-concatting two empty lists together, which has no effect.
+The final reversed list will be concatenated with itself.
 
 ```fsharp
 revc [1;2] (fun v -> v @ v)
-revc [2] (fun v -> 1 :: (fun v -> v @ v) v)
-revc [] (fun v -> 2 :: (fun v -> 1 :: (fun v -> v @ v) v) v)
-(fun v -> 2 :: (fun v -> 1 :: (fun v -> v @ v) v) v) []
-2 :: (fun v -> 1 :: (fun v -> v @ v) v) []
-2 :: 1 :: (fun v -> v @ v) []
-2 :: 1 :: ([] @ [])
-2 :: 1 :: []
-2 :: [1]
-[2; 1]
+revc [2] (fun v -> (fun v -> v @ v) (v @ [1]))
+revc [] (fun v -> (fun v -> (fun v -> v @ v) (v @ [1])) (v @ [2]))
+(fun v -> (fun v -> (fun v -> v @ v) (v @ [1])) (v @ [2])) []
+(fun v -> (fun v -> v @ v) (v @ [1])) ([] @ [2])
+(fun v -> (fun v -> v @ v) (v @ [1])) [2]
+(fun v -> v @ v) ([2] @ [1])
+(fun v -> v @ v) [2; 1]
+[2; 1] @ [2; 1]
+[2; 1; 2; 1]
 ```
 
 > (iii) Write a tail-recursive reversal function `revi : 'a list -> 'a list -> 'a list`, whose seccond parameter is an accumulating parameter, and which should be called as `revi xs[]`.
@@ -98,15 +94,16 @@ let rec revi xs (acc : 'a list) =
 
 > Write a continuation-passing version `prodc : int list -> (int -> int) -> int` of the list product function prod
 
-At each recursive call, we make a new continuation function which
-multiplies the current element with whatever is in the current
-continuation.
+At each recursive call, we make a new continuation function which multiplies
+the current element with whatever value is supplied to hte new continuation.
+This result is then fed to the continuation function we've been building thus
+far.
 
 ```fsharp
 let rec prodc xs (cont : int -> int) =
     match xs with
     | [] -> cont 1
-    | x :: xs -> prodc xs (fun v -> x * cont v)
+    | x :: xs -> prodc xs (fun v -> cont (v * x))
 ```
 
 # Exercise 11.4
