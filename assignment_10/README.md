@@ -149,14 +149,14 @@ let addIFNZRO lab3 c =
 
 ```
 
-And than we substitute all manual constructiosn of `IFNZERO` with `addIFNZRO`.
+And than we substitute all manual constructions of `IFNZERO` with `addIFNZRO`.
 
 
 # Exercise 12.2
 
-> Impr
+> Improve code generation in the cont-based micro-C compiler so that a less-than comparison with constant arguments is compiled to its truth value.
 
-First we write a test case in `sanity/cmp_sanity.c` which generates the inefficenet byte code.
+First we write a test case in `sanity/cmp_sanity.c` which generates the inefficient byte code.
 
 ```c
 int main() {
