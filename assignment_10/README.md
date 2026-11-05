@@ -459,9 +459,13 @@ ExprNotAccess:
 The following is compiled with `Ternary` being used for logical ors and logical ands.
 
 There are 2 `IFNZRO` instructions in the `Ternary` version and 4 in the
-original. One could argue that this is an improvement. On the other hand, the
-`Ternary` version features 69 instructions whereas the original features 62
-instructions.
+original. However, there are 4 `GOTO` instructions in the `Ternary` as opposed
+to 1 in the original.
+
+Furthermore there are 69 instructions in the `Ternary` version vs. the 62 in the original.
+
+The ternary version is worse here.
+
 
 ```fsharp
 [  LDARGS 1; CALL (1, "L1"); STOP;
