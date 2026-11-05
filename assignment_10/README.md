@@ -239,19 +239,24 @@ comparisons cases. It also allows for future optimizations to the arithmetic
 operations.
 
 ```fsharp
-let rec addPRIM2 e1 c =
-    match (e1, c) with
-    | (CSTI i, CSTI j :: EQ :: c1) -> if i = j
-                                      then addPRIM2 (CSTI 1) c1
-                                      else addPRIM2 (CSTI 0) c1
-    | (CSTI i, NOT :: c1) -> if i = 0
-                             then addPRIM2 (CSTI 1) c1
-                             else addPRIM2 (CSTI 0) c1
-    | (CSTI i, CSTI j :: SWAP :: c1) -> addPRIM2 (CSTI j) (CSTI i :: c1)
-    | (CSTI i, CSTI j :: LT :: c1) -> if i < j
-                                      then addPRIM2 (CSTI 1) c1
-                                      else addPRIM2 (CSTI 0) c1
-    | _ -> e1 :: c
+let rec addPRIM2 c =
+    match c with
+    | (CSTI i :: CSTI j :: EQ :: c1) -> if i = j
+                                        then addPRIM2 (CSTI 1 :: c1)
+                                        else addPRIM2 (CSTI 0 :: c1)
+    | (CSTI i :: NOT :: c1) -> if i = 0
+                               then addPRIM2 (CSTI 1 :: c1)
+                               else addPRIM2 (CSTI 0 :: c1)
+    | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (CSTI j :: CSTI i :: c1)
+    | (CSTI i :: CSTI j :: LT :: c1) -> if i < j
+                                        then addPRIM2 (CSTI 1 :: c1)
+                                        else addPRIM2 (CSTI 0 :: c1)
+
+    | (CSTI 0 :: IFZERO lab :: c1) -> GOTO lab :: c1
+    | (CSTI _ :: IFZERO lab :: c1) -> c1
+    | (CSTI n :: IFNZRO lab :: c1) when n <> 0 -> GOTO lab :: c1
+    | (CSTI _ :: IFNZRO lab :: c1) -> c1
+    | _ -> c
 ```
 
 Now we update the the `cExpr` function to use `addPRIM2` when compiling
@@ -270,4 +275,262 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (c : instr list) : inst
     ...
 ```
 
+Now we create a test case.
+
+```c
+int main() {
+    if(11 < 22) {
+        print 1;
+    }
+
+    if(22 < 11) {
+        print 2;
+    }
+
+    if(22 >= 11) {
+        print 3;
+    }
+
+    if(11 >= 22) {
+        print 4;
+    }
+
+    if(22 <= 11) {
+        print 5;
+    }
+
+    if(11 <= 22) {
+        print 6;
+    }
+
+    println;
+}
+```
+
+And compile it. As we can see, everything has been nicely optimized.
+
+```fsharp
+> compileToFile (fromFile "sanity/cmp_sanity_2.c") "sanity/cmp_sanity_2.c";;
+val it: Machine.instr list =
+  [LDARGS 0; CALL (0, "L1"); STOP;
+  Label "L1"; CSTI 1; PRINTI; INCSP -1;
+  Label "L4"; CSTI 3; PRINTI; INCSP -1;
+  Label "L3"; CSTI 6; PRINTI; INCSP -1;
+  Label "L2"; CSTI 10; PRINTNL; RET 0]
+```
+
+# Exercise 12.3
+
+> Extend the micro-C abstract syntax (file `Absyn.fs`) with conditional expressions `Cond(e1, e2, e3)`, corresponding to this concrete syntax(known from C, C++, Java and C#): `e1 ? e2 : e3`
+
+While the exercise specifically mentions that parsing this syntax isn't specifically required, for the sake of completeness, we've done so.
+
+First we define the abstract syntax for a ternary.
+
+```fsharp
+type typ =
+...
+and expr =                                                         
+...
+| Ternary of expr * expr * expr    (* Ternary operator CHANGED | 12.3 *)
+```
+
+Then we define two new tokens in the lexer.
+
+```fsharp
+rule Token = parse
+  ...
+  | '?'             { QUESTION }  (* CHANGED | 12.3 *)
+  | ':'             { COLON } 
+  ...
+```
+
+Then we register the tokens within the parser.
+
+```
+%token COLON QUESTION  /* CHANGED 12.3 */
+```
+
+And correctly ensure that they don't bind tigther than the binary arithmetic
+operators.
+
+```
+%right ASSIGN             /* lowest precedence */
+%nonassoc PRINT
+%left QUESTION COLON /* CHANGED | 8.5 */
+%left SEQOR
+...
+%nonassoc LBRACK          /* highest precedence  */
+```
+
+Then we add a rule that correctly parses ternary expressions. 
+
+```fsharp
+ExprNotAccess:
+    AtExprNotAccess                     { $1                   }
+  | Expr QUESTION Expr COLON Expr       { Ternary($1, $3, $5)  } /* CHANGED | 12.3 */
+  ...
+```
+
+Finally we add support for ternary operators in the compiler.
+
+The idea is to achieve something akin to the following pseudo-bytecode:
+
+```
+<condition>
+ifnzro lfalse
+<e1>
+GOTO end
+LABEL lfalse
+<e2>
+LABEL end
+```
+
+```fsharp
+and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (c : instr list) : instr list =
+    match e with
+    ...
+    | Ternary(condition, e1, e2) ->
+      let (lend, c1) = addLabel c
+      let (lcond, c2) = (addLabel (cExpr e1 varEnv funEnv c1))
+
+      cExpr condition varEnv funEnv (
+          addIFNZRO lcond (cExpr e2 varEnv funEnv (GOTO lend :: c2)))
+```
+
+To make sure this works, we've made a test case in `sanity/ternary_sanity.c`.
+
+```c
+// expected output: "2 1"
+int main() {
+    print (2 > 10) ? (0 + 1) : (2 * 2 - 2);
+    print (10 > 2) ? (0 + 1) : (2 * 2 - 2);
+    println;
+}
+```
+
+Compiling it and running it we get:
+
+```
+$ java Machine.java sanity/ternary_sanity.out
+2 1
+
+Used 0.002 seconds
+```
+
+# Exercise 12.4
+
+> The compilation of the short-cut logical operators `(&&)` and `(||)` in `Contcomp.fs` is rather complicated. After Exercise 12.3 one can implement them in a somewhat simpler way, using these equivalences:
+
+> `e1 && e2` is equivalent to `(e1 ? e2 : 0)`
+
+> `e1 || e2` is equivalent to `(e1 ? 1 : e2)`
+
+
+> Implement the sequential logical operators (`&&` and `||`) this way in your extended compiler from Exercise 12.3
+
+This is rather straight forward, we just replace the implementation of the
+existing for compiling `Andalso` and `Orelse` with a ternary that gets
+compiled.
+
+```fsharp
+and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (c : instr list) : instr list =
+    match e with
+    ...
+    | Andalso(e1, e2) -> cExpr (Ternary(e1, e2, CstI 0)) varEnv funEnv c
+    | Orelse(e1, e2) -> cExpr (Ternary(e1, CstI 1, e2)) varEnv funEnv c
+```
+
+> You should change the parser specification in `CPar.fsy` to build `Cond(...)` instead of `Andalso(...)`
+
+This is also rather straightforward. Isntead of compiling to an `Andalso` or `Orelse`, we just use a `Ternary`.
+
+```fsharp
+ExprNotAccess:
+  ...
+  | Expr SEQAND Expr                    { Ternary($1, $3, CstI 0) }
+  | Expr SEQOR  Expr                    { Ternary($1, CstI 1, $3) }
+  ...
+```
+
+> Test this approach on file ex13.c and possibly other examples. How does the code quality compare to the existing complicated compilation of `&&` and `||`?
+
+
+The following is compiled with `Ternary` being used for logical ors and logical ands.
+
+There are 2 `IFNZRO` instructions in the `Ternary` version and 4 in the
+original. One could argue that this is an improvement. On the other hand, the
+`Ternary` version features 69 instructions whereas the original features 62
+instructions.
+
+```fsharp
+[  LDARGS 1; CALL (1, "L1"); STOP;
+
+   Label "L1"; 
+   INCSP 1; GETBP; CSTI 1; ADD;
+   CSTI 1889; STI; INCSP -1;
+   GOTO "L3";
+
+   Label "L2";
+   GETBP; CSTI 1; ADD; GETBP;
+   CSTI 1; ADD; LDI; CSTI 1; ADD; STI;
+   INCSP -1; GETBP; CSTI 1; ADD; LDI;
+   CSTI 4; MOD;
+   IFZERO "L6";
+   CSTI 0;
+   GOTO "L4";
+
+   Label "L6";
+   GETBP; CSTI 1; ADD;
+   LDI; CSTI 100; MOD;
+   IFNZRO "L5";
+   GETBP;
+   CSTI 1; ADD; LDI; CSTI 400; MOD; NOT;
+   GOTO "L4";
+
+   Label "L5";
+   CSTI 1;
+
+   Label "L4";
+   IFZERO "L3"; GETBP; CSTI 1;
+   ADD; LDI; PRINTI; INCSP -1;
+
+   Label "L3";
+   GETBP; CSTI 1; ADD; LDI; GETBP; LDI;
+   LT;
+   IFNZRO "L2";
+   RET 1
+]
+```
+
+This is the original compiler.
+
+```fsharp
+  [LDARGS 1; CALL (1, "L1"); STOP; 
+
+  Label "L1";
+  INCSP 1; GETBP; CSTI 1; ADD;
+   CSTI 1889; STI; INCSP -1;
+   GOTO "L3";
+
+   Label "L2";
+   GETBP; CSTI 1; ADD; GETBP;
+   CSTI 1; ADD; LDI; CSTI 1; ADD; STI;
+   INCSP -1; GETBP; CSTI 1; ADD; LDI;
+   CSTI 4; MOD;
+   IFNZRO "L3";
+   GETBP; CSTI 1; ADD; LDI; CSTI 100; MOD;
+   IFNZRO "L4";
+   GETBP; CSTI 1; ADD; LDI; CSTI 400; MOD;
+   IFNZRO "L3";
+
+   Label "L4"; GETBP; CSTI 1; ADD; LDI; PRINTI; INCSP -1;
+
+   Label "L3"; GETBP;
+   CSTI 1; ADD; LDI; GETBP;
+   LDI; LT;
+   IFNZRO "L2";
+   RET 1
+   ]
+```
 

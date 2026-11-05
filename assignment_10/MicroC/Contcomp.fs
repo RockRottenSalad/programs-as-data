@@ -126,16 +126,21 @@ let addIFNZRO lab3 c =
 let rec addPRIM2 c =
     match c with
     | (CSTI i :: CSTI j :: EQ :: c1) -> if i = j
-                                      then addPRIM2 (CSTI 1 :: c1)
-                                      else addPRIM2 (CSTI 0 :: c1)
+                                        then addPRIM2 (CSTI 1 :: c1)
+                                        else addPRIM2 (CSTI 0 :: c1)
     | (CSTI i :: NOT :: c1) -> if i = 0
-                             then addPRIM2 (CSTI 1 :: c1)
-                             else addPRIM2 (CSTI 0 :: c1)
+                               then addPRIM2 (CSTI 1 :: c1)
+                               else addPRIM2 (CSTI 0 :: c1)
     | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (CSTI j :: CSTI i :: c1)
     | (CSTI i :: CSTI j :: LT :: c1) -> if i < j
-                                      then addPRIM2 (CSTI 1 :: c1)
-                                      else addPRIM2 (CSTI 0 :: c1)
-    | _ -> e1 :: c
+                                        then addPRIM2 (CSTI 1 :: c1)
+                                        else addPRIM2 (CSTI 0 :: c1)
+
+    | (CSTI 0 :: IFZERO lab :: c1) -> GOTO lab :: c1
+    | (CSTI _ :: IFZERO lab :: c1) -> c1
+    | (CSTI n :: IFNZRO lab :: c1) when n <> 0 -> GOTO lab :: c1
+    | (CSTI _ :: IFNZRO lab :: c1) -> c1
+    | _ -> c
             
 (* ------------------------------------------------------------------- *)
 
@@ -307,37 +312,17 @@ and cExpr (e : expr) (varEnv : varEnv) (funEnv : funEnv) (c : instr list) : inst
             | ">"   -> SWAP :: LT :: c
             | "<="  -> SWAP :: LT :: addNOT c
             | _     -> failwith "unknown primitive 2")))
-    | Andalso(e1, e2) ->
-      match c with
-      | IFZERO lab :: _ ->
-         cExpr e1 varEnv funEnv (addIFZERO lab (cExpr e2 varEnv funEnv c))
-      | IFNZRO labthen :: c1 -> 
-        let (labelse, c2) = addLabel c1
-        cExpr e1 varEnv funEnv
-           (addIFZERO labelse
-               (cExpr e2 varEnv funEnv (addIFNZRO labthen c2)))
-      | _ ->
-        let (jumpend,  c1) = makeJump c
-        let (labfalse, c2) = addLabel (addCST 0 c1)
-        cExpr e1 varEnv funEnv
-          (addIFZERO labfalse
-             (cExpr e2 varEnv funEnv (addJump jumpend c2)))
-    | Orelse(e1, e2) -> 
-      match c with
-      | IFNZRO lab :: _ -> 
-        cExpr e1 varEnv funEnv (addIFNZRO lab (cExpr e2 varEnv funEnv c))
-      | IFZERO labthen :: c1 ->
-        let(labelse, c2) = addLabel c1
-        cExpr e1 varEnv funEnv
-           (addIFNZRO labelse (cExpr e2 varEnv funEnv
-             (addIFZERO labthen c2)))
-      | _ ->
-        let (jumpend, c1) = makeJump c
-        let (labtrue, c2) = addLabel(addCST 1 c1)
-        cExpr e1 varEnv funEnv
-           (addIFNZRO labtrue 
-              (cExpr e2 varEnv funEnv (addJump jumpend c2)))
+    | Andalso(e1, e2) -> cExpr (Ternary(e1, e2, CstI 0)) varEnv funEnv c
+    | Orelse(e1, e2) -> cExpr (Ternary(e1, CstI 1, e2)) varEnv funEnv c
     | Call(f, es) -> callfun f es varEnv funEnv c
+    | Ternary(condition, e1, e2) ->
+      let (lend, c1) = addLabel c
+      let (lfalse, c2) = (addLabel (cExpr e1 varEnv funEnv c1))
+
+      cExpr condition varEnv funEnv (
+          addIFNZRO lfalse (cExpr e2 varEnv funEnv (GOTO lend :: c2)))
+
+
 
 (* Generate code to access variable, dereference pointer or index array: *)
 

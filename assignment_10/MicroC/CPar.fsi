@@ -36,6 +36,8 @@ type token =
   | RETURN
   | VOID
   | WHILE
+  | COLON
+  | QUESTION
   | CSTSTRING of (string)
   | NAME of (string)
   | CSTINT of (int)
@@ -76,6 +78,8 @@ type tokenId =
     | TOKEN_RETURN
     | TOKEN_VOID
     | TOKEN_WHILE
+    | TOKEN_COLON
+    | TOKEN_QUESTION
     | TOKEN_CSTSTRING
     | TOKEN_NAME
     | TOKEN_CSTINT
