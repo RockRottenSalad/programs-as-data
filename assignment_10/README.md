@@ -242,8 +242,8 @@ operations.
 let rec addPRIM2 c =
     match c with
     | (CSTI i :: CSTI j :: EQ :: c1) -> if i = j
-                                        then addPRIM2 (CSTI 1 :: c1)
-                                        else addPRIM2 (CSTI 0 :: c1)
+                                        then addPRIM2 (addCST 1 c1)
+                                        else addPRIM2 (addCST 0 c1)
     | (CSTI i :: NOT :: c1) -> if i = 0
                                then addPRIM2 (addCST 1 c1)
                                else addPRIM2 (addCST 0 c1)
