@@ -100,14 +100,14 @@ let rec addCST i c =
     | (1, DIV        :: c1) -> c1
     | (0, EQ         :: c1) -> addNOT c1
     | (_, INCSP m    :: c1) -> if m < 0 then addINCSP (m+1) c1
-                               else CSTI i :: c
+                               else addCST i c
     | (0, IFZERO lab :: c1) -> addGOTO lab c1
     | (_, IFZERO lab :: c1) -> c1
     | (0, IFNZRO lab :: c1) -> c1
     | (_, IFNZRO lab :: c1) -> addGOTO lab c1
     | (_, CSTI j :: LT :: c1) -> if i < j
-                                 then CSTI 1 :: c1
-                                 else CSTI 0 :: c1
+                                 then addCST 1 c1
+                                 else addCST 0 c1
     | _                     -> CSTI i :: c
 
 (* CHANGED | 12.1 *)
@@ -126,15 +126,15 @@ let addIFNZRO lab3 c =
 let rec addPRIM2 c =
     match c with
     | (CSTI i :: CSTI j :: EQ :: c1) -> if i = j
-                                        then addPRIM2 (CSTI 1 :: c1)
-                                        else addPRIM2 (CSTI 0 :: c1)
+                                        then addPRIM2 (addCST 1 c1)
+                                        else addPRIM2 (addCST 0 c1)
     | (CSTI i :: NOT :: c1) -> if i = 0
-                               then addPRIM2 (CSTI 1 :: c1)
-                               else addPRIM2 (CSTI 0 :: c1)
-    | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (CSTI j :: CSTI i :: c1)
+                               then addPRIM2 (addCST 1 c1)
+                               else addPRIM2 (addCST 0 c1)
+    | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (addCST j (addCST i c1))
     | (CSTI i :: CSTI j :: LT :: c1) -> if i < j
-                                        then addPRIM2 (CSTI 1 :: c1)
-                                        else addPRIM2 (CSTI 0 :: c1)
+                                        then addPRIM2 (addCST 1 c1)
+                                        else addPRIM2 (addCST 0 c1)
 
     | (CSTI 0 :: IFZERO lab :: c1) -> GOTO lab :: c1
     | (CSTI _ :: IFZERO lab :: c1) -> c1

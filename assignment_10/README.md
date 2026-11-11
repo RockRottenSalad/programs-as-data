@@ -191,8 +191,8 @@ let rec addCST i c =
     match (i, c) with
     ...
     | (_, CSTI j :: LT :: c1) -> if i < j
-                             then CstI 1 :: c1
-                             else CstI 0 :: c1
+                                 then addCST 1 c1
+                                 else addCST 0 c1
     | _                     -> CSTI i :: c
 ```
 
@@ -245,12 +245,12 @@ let rec addPRIM2 c =
                                         then addPRIM2 (CSTI 1 :: c1)
                                         else addPRIM2 (CSTI 0 :: c1)
     | (CSTI i :: NOT :: c1) -> if i = 0
-                               then addPRIM2 (CSTI 1 :: c1)
-                               else addPRIM2 (CSTI 0 :: c1)
-    | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (CSTI j :: CSTI i :: c1)
+                               then addPRIM2 (addCST 1 c1)
+                               else addPRIM2 (addCST 0 c1)
+    | (CSTI i :: CSTI j :: SWAP :: c1) -> addPRIM2 (addCST j (addCST i c1))
     | (CSTI i :: CSTI j :: LT :: c1) -> if i < j
-                                        then addPRIM2 (CSTI 1 :: c1)
-                                        else addPRIM2 (CSTI 0 :: c1)
+                                        then addPRIM2 (addCST 1 c1)
+                                        else addPRIM2 (addCST 0 c1)
 
     | (CSTI 0 :: IFZERO lab :: c1) -> GOTO lab :: c1
     | (CSTI _ :: IFZERO lab :: c1) -> c1
