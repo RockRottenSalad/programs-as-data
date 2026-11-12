@@ -174,7 +174,7 @@ let rec cExpr (kind: int->var) (varEnv : varEnv) (e : expr<typ,typescheme>) (C: 
   | CstI (i,_) -> addCST i C
   | CstB (b,_) -> addCST (if b then 1 else 0) C
   | CstN _     -> NIL :: C
-  | Pair(l, r, _) -> CONS :: cExpr kind varEnv r (cExpr kind varEnv l C)
+  | Pair(l, r, _) -> cExpr kind varEnv l (cExpr kind varEnv r (PAIR :: C))
   | Var (x,_)  -> loadVar varEnv x C
   | Prim1(ope,e1,_) ->
     cExpr kind varEnv e1 
@@ -182,6 +182,7 @@ let rec cExpr (kind: int->var) (varEnv : varEnv) (e : expr<typ,typescheme>) (C: 
        | ("print",TypI) -> PRINTI :: C
        | ("print",TypB) -> PRINTB :: C
        | ("print",TypL _) -> PRINTL :: C
+       | ("print",TypP _) -> PRINTP :: C
          // Polymorphic print, prints all scalar values as integers.
        | ("print",t) -> PRINTVAL :: C
        | ("hd",_)    -> CAR :: C  

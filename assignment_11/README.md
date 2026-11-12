@@ -32,7 +32,7 @@ VERBOSE: Result type: int
 
 In this function we can see that in the function `f`, both the calls `g 4` and `f (x-1)` are in tail position.
 
-```ml
+```sml
 fun f x = if x < 0 then g 4 else f (x-1)
 and g x = x  
 
@@ -120,8 +120,8 @@ Without optimizations it's 64 instructions.
 
 With optimizations it's 59 instructions.
 
-So we save 5 instructions. Also some calls are turned into
-tail calls.
+So we save 5 instructions. It's also worth mentioning that some calls are
+turned into tail calls.
 
 ```fsharp
 // num of ins: 64
@@ -160,6 +160,12 @@ With optimizations.
 
  > The example program `pair.sml` shows use of pairs where the pair's first and second components are accessed. 
 
+Hello TA grading this `o/`. We have intentionally omitted some of the minor
+code changes in an attempt to make reading it more bearable. Despite our best
+efforts, this section remains painfully long.
+
+Have fun!
+
 
 > 1. Write type rules for the primitives `fst` and `snd`, see Fig. 13.6
 
@@ -177,8 +183,8 @@ For `snd (l, r)` we just check that `r` types to `t`.
 > 2. Write evaluation rules for the primitives `fst` and `snd`, see Fig. 13.7
 
 The idea is we can conclude that the function `fst` or
-`snd` evalutes to the value `v` if we can show that the
-corresponding element also evalutes to `v`.
+`snd` evaluates to the value `v` if we can show that the
+corresponding element also evaluates to `v`.
 
 ```
     p |- l => v                   p |- r => v
@@ -187,7 +193,7 @@ p |- fst (l, r) => v           p |- snd (l, r) => v
 ```
 
 
-> 3. `FunLex.fsl`: Extend with token `COMMA` and unarry primitives `snd` and `fst`.
+> 3. `FunLex.fsl`: Extend with token `COMMA` and unary primitives `snd` and `fst`.
 
 We've added support for a comma like so.
 
@@ -224,7 +230,7 @@ We make sure that `FST` and `SND` have the same precedence as `HEAD` and `TAIL`.
 %nonassoc PRIM1 RAISE HEAD TAIL NOT FST SND          /* highest precedence  */
 ```
 
-We need to make sure that all other binary operators bind tigther than the comma, i.e. so that
+We need to make sure that all other binary operators bind tighter than the comma, i.e. so that
 
 `(4 + 2, 2 * 3)` is parsed as:
 
@@ -235,6 +241,8 @@ We need to make sure that all other binary operators bind tigther than the comma
 4  2  2  3
 ```
 
+So we put the precedence of `COMMA` between `IF` and `SEQOR`.
+
 ```
 ...
 %nonassoc IF ELSE
@@ -243,16 +251,16 @@ We need to make sure that all other binary operators bind tigther than the comma
 ...
 ```
 
-Now we add the parse rule which expects parentheses around the pair.
+Now we add the production rule for parsing a pair.
 
 ```fsharp
 Expr:
     ...
-  | LPAR Expr COMMA Expr RPAR           { Pair($2, $4, None)                   }
+  | Expr COMMA Expr           { Pair($1, $3, None)                   }
   ...
 ```
 
-> 5.  `Absyn.fs`: Extend the abstract syntax with a pair expression:
+> 5. `Absyn.fs`: Extend the abstract syntax with a pair expression:
 
 We simply add a pair type to our AST:
 
@@ -371,7 +379,7 @@ let rec showType t : string =
     | TypP(t1, t2) -> "pair(" + pr t1 + ", " + pr t2 + ")" (* CHANGED | 13.2 *)
 ```
 
-The `typeExpr` function sucked the souls out of us.
+The `typExpr` function sucked the souls out of us.
 
 It made us envy the lives of maggots.
 
@@ -380,7 +388,6 @@ But after much effort, we made something that works.
 It's not possible for us to explain how this works. Just stare at
 it until you either understand it or experience the same feeling of
 absolute despair this single function put us through.
-
 
 ```fsharp
 let rec typExpr (lvl : int) (env : tenv) (e : expr<'a,'b>) : typ * expr<typ,typescheme> =
@@ -395,12 +402,10 @@ let rec typExpr (lvl : int) (env : tenv) (e : expr<'a,'b>) : typ * expr<typ,type
     match ope with
     ...
     | "fst" -> let tv = TypV(newTypeVar lvl)
-               unify (TypL tv) t1;
-               t1,Prim1(ope,e1',Some t1)
+               tv,Prim1(ope,e1',Some tv)
 
     | "snd" -> let tv = TypV(newTypeVar lvl)
-               unify (TypL tv) t1;
-               t1,Prim1(ope,e1',Some t1)
+               tv,Prim1(ope,e1',Some tv)
 
     ...
   ...
@@ -423,7 +428,7 @@ We then extend `ppValue` so that it also supports pretty printing pairs. We simp
 ```fsharp
 let rec ppValue = function
   ...
-  | PairV(l, r) -> sprintf "(%s, %s)" (ppValue l) (ppValue r)
+  | PairV(l, r) -> sprintf "( %s , %s )" (ppValue l) (ppValue r)
 ```
 
 Then for the `evalExpr` function we simply add a case to evaluate a pair into a
@@ -473,32 +478,217 @@ let check e =
 
 Note that the specified instruction numbers `42` and `44` are already in use by instructions `HEAPSTI` and `HEAPALLOC`.
 
-Another thing worth nothing here is that `PAIR` instruction is
-completely identical to the `CONS` instruction. So for the sake of
-code-reuse(and our own sanity), we'll just make `PAIR` compile to
-`CONS`.
+We've therefore arbitrarily decided to use `115` as our instruction number for
+`PAIR` and `116` has the instruction number for `PRINTP`.
 
-The `PRINTVAL` instruction can already print cons, we'll just
-re-use that.
+Firstly the code for handling a `PAIR` is almost identical with the code for
+`CONS`. The only difference is the tag used in the block.
 
-So, we make `Pair` compile to `CONS`.
-And `fst` compile to `CAR`, and then `snd` compiles to `CDR`.
+We allocate a 2 word block and set the tag to a `PAIRTAG`. Then we pop off the
+first two elements from the stack and add them to the pair.
+
+For the `PRINTP` instruction, we've defined a new helper function called
+`printPair`, see the code block below this one.
+
+```c
+int execcode(word p[], word s[], word iargs[], int iargc, int trace) {
+  word bp = -999;
+  word sp = -1;          // Stack top pointer
+  word pc = 0;           // Program counter: next instruction
+  word hr = -1;          // Handler Register
+  for (;;) {
+    ...
+    switch (p[pc++]) {
+    ...
+    case PAIR: {
+      word* p = allocate(PAIRTAG, 2, s, sp); 
+      p[1] = (word)s[sp-1];
+      p[2] = (word)s[sp];
+      s[sp-1] = (word)p;
+      sp--;
+    } break;
+    ...
+    case PRINTP:
+      printPair(s[sp]); break;
+    ...
+    }
+  }
+  ...
+}
+```
+
+This is the code for handling printing pairs. We essentially just call the
+`printVal` function for each element in the pair.
+
+```c
+// CHANGED | 13.2
+void printPair(word i) {
+    if (i == NILVALUE) {
+        printNil(i);
+        return;
+    } 
+    word *pairPtr = (word *)i;
+
+    if (BlockTag(*pairPtr) != PAIRTAG) {
+      printf("PRINTP: Expected PAIRTAG.\n");
+      exit(-1);
+    }
+
+    printf("( ");
+    printVal(pairPtr[1]);
+    printf(", ");
+    printVal(pairPtr[2]);
+    printf(") ");
+}
+```
+
+We've then modified `printVal` so that it's aware of the new `PAIRTAG`. This
+allows for the printing of nested pairs.
+
+```c
+void printVal(word i) {
+  // print all values - scalar as integers, pointers using tag
+  if IsInt(i) {
+    printI(i);  // A scalar value printed as integer
+    return;
+  }
+  if (i == NILVALUE) {
+    printNil(i);  // A pointer null value.
+    return;
+  }
+  // Reference, look at tag
+  word *valPtr = (word *)i;
+
+  ... // Ommitted for the sake of brevity.
+
+  // CHANGED | 13.2
+  if (BlockTag(*valPtr) == PAIRTAG) {
+    printPair(i);
+    return;
+  } 
+}
+```
+
+
+
+> 9. `ContComp.fs`: The compiler must be extended to generate code for creating a
+pair in the heap and for accessing the first and second component with fst and
+snd respectively.
+
+We make a `Pair` compile to the `PAIR` instruction mentioned earlier.
+
+Since the layout of a pair is identical with that of a `CONS`, we can re-use
+the `CAR` and `CDR` instructions. `fst` is compiled to `CAR` and `snd` is
+compiled to `CDR`.
+
 
 ```fsharp
 let rec cExpr (kind: int->var) (varEnv : varEnv) (e : expr<typ,typescheme>) (C: instr list) : instr list =
   let (env,fdepth) = varEnv
   match e with
   ...
-  | Pair(l, r, _) -> CONS :: cExpr kind varEnv r (cExpr kind varEnv l C)
+  | Pair(l, r, _) -> cExpr kind varEnv l (cExpr kind varEnv r (PAIR :: C))
   ...
   | Prim1(ope,e1,_) ->
     cExpr kind varEnv e1 
       (match (ope,getTypExpr e1) with
        ...
-       | ("fst",_)    -> CAR :: C  
+       | ("fst",_)    ->  CAR :: C  
        | ("snd",_)    ->  CDR :: C
        ...
   | Prim2(ope, e1, e2,_) -> ...
   ...
 ```
+
+> 10. `Machine.fs`: The byte code instructions PRINTP and PAIR must be added. You
+have to assign unique instruction codes to PRINTP and PAIR that match with
+same instructions in msmlmachine.c.
+
+First we define the two new instructions.
+
+```fsharp
+type instr =
+  ...
+  | PRINTVAL                  // Polymorphic print
+  ...
+  | PAIR
+
+  ...
+```
+
+Then we assign each instruction a byte code.
+
+```fsharp
+let code = function
+  ...
+  | PAIR  -> 115
+  | PRINTP  -> 116
+```
+
+We specify that both of these instructions are 1 byte instructions.
+
+```fsharp
+let sizeInstr instr = 
+  match instr with
+  ...
+  | PRINTP         -> 1
+  ...
+  | PAIR           -> 1
+```
+
+Then we add support for pretty printing them.
+
+```fsharp
+let ppInstr (addr,strs) instr =
+  let indent s = (addr + sizeInstr instr,"  " + (addr.ToString().PadLeft(4)) + ": " + s :: strs)
+  match instr with
+  ...
+  | PRINTP         -> indent "PRINTP" (* CHANGED | 13.2 *)
+  ...
+  | PAIR           -> indent "PAIR"
+  ...
+```
+
+## And now we test!
+
+Finally we can test that the example presented in the book works. Looking at
+the example below, `f` should call itself recursively twice and then it should
+call `g`, which should produce the output `(-1, 42)`.
+
+```sml
+val p = (1,43)
+fun f p = if fst(p) < 0 then g p else f (fst(p)-1, snd(p))
+and g p = (fst(p),snd(p)-1)
+
+begin
+  print (f p)
+end
+```
+
+First we test that the interpreter works by passing the `eval` flag to the compiler.
+```
+dotnet run -eval SmlEx/pair.sml
+```
+
+And we get the following output as expected.
+```
+Evaluating Program
+( -1, 42 )
+Result value: (-1, 42)
+Used: Elapsed 16ms, CPU 16ms
+ 
+```
+
+Then we run the compiled program using the VM and observe that we get the same result.
+
+```
+../MicroVM/microvm SmlEx/pair.out
+( -1 , 42 )
+Result value: #128980830982264
+Used 0 cpu milli-seconds
+Number of GC: 0
+```
+
+The only minor difference is that the result value is the pointer for the pair.
+This is due to how the `printStackVal` function is implemented in the VM.
 

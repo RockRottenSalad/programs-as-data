@@ -76,6 +76,7 @@ type instr =
   | PRINTNL                   // Print new line
   | PRINTC                    // Print s[sp] as character
   | PRINTL                    // Print s[sp] as list
+  | PRINTP
   | PRINTVAL                  // Polymorphic print
 
   // Start and stop program  
@@ -88,6 +89,7 @@ type instr =
   | CDR                       // Load second component
   | SETCAR                    // Set first component
   | SETCDR                    // Set second component 
+  | PAIR
 
   // Exceptions
   | THROW                     // Search for exception handle and execute affiliated exception code
@@ -100,8 +102,6 @@ let closTag = 1
 let stringTag = 2
 let arrayTag = 3
 let objectTag = 4
-
-// CHANGED 13.2
 let pairTag = 5
 
 // Encoding of constants
@@ -207,9 +207,8 @@ let code = function
   | CDR    -> 112
   | SETCAR -> 113
   | SETCDR -> 114 
-
-//  | PAIR    -> 115
-//  | PRINTP    -> 116
+  | PAIR    -> 115
+  | PRINTP    -> 116
 
   // Exceptions
   | THROW      -> 120
@@ -253,6 +252,7 @@ let sizeInstr instr =
   | PRINTL         -> 1      
   | PRINTN         -> 1
   | PRINTO         -> 1    
+  | PRINTP         -> 1    
   | LDARGS _       -> 2
   | STOP           -> 1
   | NIL            -> 1
@@ -261,6 +261,7 @@ let sizeInstr instr =
   | CDR            -> 1
   | SETCAR         -> 1
   | SETCDR         -> 1
+  | PAIR           -> 1
   | PUSHLAB _      -> 2
   | HEAPALLOC _    -> 3  // tag and size
   | HEAPSTI _      -> 2
@@ -345,6 +346,7 @@ let ppInstr (addr,strs) instr =
   | PRINTC         -> indent "PRINTC"
   | PRINTL         -> indent "PRINTL"    
   | PRINTN         -> indent "PRINTN"
+  | PRINTP         -> indent "PRINTP"  
   | PRINTO         -> indent "PRINTO"  
   | LDARGS n       -> indent ("LDARGS " + n.ToString())
   | STOP           -> indent "STOP"  
@@ -354,6 +356,7 @@ let ppInstr (addr,strs) instr =
   | CDR            -> indent "CDR"   
   | SETCAR         -> indent "SETCAR"
   | SETCDR         -> indent "SETCDR"
+  | PAIR           -> indent "PAIR"
   | PUSHLAB lab    -> indent ("PUSHLAB " + lab)
   | HEAPALLOC (tag,n) -> indent ("HEAPALLOC " + tag.ToString() + " " + n.ToString())
   | HEAPSTI n      -> indent ("HEAPSTI " + n.ToString())

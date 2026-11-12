@@ -188,6 +188,7 @@ let rec unify t1 t2 : unit =
   | (TypF _,   t) -> failwith ("Type error: function and " + typeToString t)
   | (TypL _,   t) -> failwith ("Type error: list and " + typeToString t)
   | (TypE,     t) -> failwith ("Type error: exception and " + typeToString t)
+  | (TypP _,     t) -> failwith ("Type error: pair and " + typeToString t)
   
 // Generate fresh type variables
 
@@ -274,21 +275,11 @@ let rec typExpr (lvl : int) (env : tenv) (e : expr<'a,'b>) : typ * expr<typ,type
                  unify (TypL tv) t1;
                  (TypB,Prim1(ope,e1',Some TypB))
 
-    | "fst" -> match e1' with
-               | Pair(l, _, _) -> 
-                             let lt, l' = typExpr lvl env l
-                             let tv = TypV(newTypeVar lvl)
-                             unify (TypL tv) lt;
-                             lt,Prim1(ope,e1',Some lt)
-               | _ -> failwith ("fst called on non-pair value: " + e1'.ToString())
+    | "fst" -> let tv = TypV(newTypeVar lvl)
+               tv, Prim1(ope, e1', Some tv)
 
-    | "snd" -> match e1' with
-               | Pair(_, r, _) -> 
-                             let rt, r' = typExpr lvl env r
-                             let tv = TypV(newTypeVar lvl)
-                             unify (TypL tv) rt;
-                             rt,Prim1(ope,e1',Some rt)
-               | _ -> failwith ("snd called on non-pair value: " + e1'.ToString())
+    | "snd" -> let tv = TypV(newTypeVar lvl)
+               tv, Prim1(ope, e1', Some tv)
 
     | _ -> failwith ("typ of Prim1 " + ope + " not implemented")
   | Prim2(ope,e1,e2,_) -> 

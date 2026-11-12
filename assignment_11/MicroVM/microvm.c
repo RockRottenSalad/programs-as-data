@@ -133,6 +133,7 @@ word* readfile(char* filename);
 #define STRINGTAG 2 // Used for heap allocated strings, exercise.
 #define ARRAYTAG 3  // Used for heap allocated arrays, exercise.
 #define OBJECTTAG 4 // Used for heap allocated instance objects.
+#define PAIRTAG 5   // Used for pairs
 
 #define NILVALUE 0  // Used for NIL in micro-SML and null in micro-Java.
 
@@ -221,6 +222,9 @@ int numGC=0;  // Glocal counter on number of GC.
 #define CDR 112     // Load second component
 #define SETCAR 113  // Set first component
 #define SETCDR 114  // Set second component 
+                    
+#define PAIR 115    // PAIR type
+#define PRINTP 116    // Print PAIR
 
 // Exceptions
 #define THROW 120    // Search for exception handle and execute affiliated exception code
@@ -266,6 +270,7 @@ void printInstruction(word p[], word pc) {
   case PRINTB: printf("PRINTB"); break;
   case PRINTN: printf("PRINTN"); break;
   case PRINTO: printf("PRINTO"); break;
+  case PRINTP: printf("PRINTP"); break;
   case LDARGS: printf("LDARGS"); break;
   case STOP:   printf("STOP"); break;
   case NIL:   printf("NIL"); break;
@@ -409,6 +414,10 @@ void printClosure(word *closPtr) {
   printf("Fn@%" WORD_FMT "(%" WORD_FMT ") ", fnPtr, numFreeVars);
 }
 
+
+// So that this can be called recurisvely
+void printPair(word i);
+
 void printVal(word i) {
   // print all values - scalar as integers, pointers using tag
   if IsInt(i) {
@@ -441,6 +450,32 @@ void printVal(word i) {
     printObject(i);  // We have an object value
     return;
   } 
+
+  // CHANGED | 13.2
+  if (BlockTag(*valPtr) == PAIRTAG) {
+    printPair(i);
+    return;
+  } 
+}
+
+// CHANGED | 13.2
+void printPair(word i) {
+    if (i == NILVALUE) {
+        printNil(i);
+        return;
+    } 
+    word *pairPtr = (word *)i;
+
+    if (BlockTag(*pairPtr) != PAIRTAG) {
+      printf("PRINTP: Expected PAIRTAG.\n");
+      exit(-1);
+    }
+
+    printf("( ");
+    printVal(pairPtr[1]);
+    printf(", ");
+    printVal(pairPtr[2]);
+    printf(") ");
 }
 
 void printNL() {
@@ -669,6 +704,13 @@ int execcode(word p[], word s[], word iargs[], int iargc, int /* boolean */ trac
       s[sp-1] = (word)p;
       sp--;
     } break;
+    case PAIR: {
+      word* p = allocate(PAIRTAG, 2, s, sp); 
+      p[1] = (word)s[sp-1];
+      p[2] = (word)s[sp];
+      s[sp-1] = (word)p;
+      sp--;
+    } break;
     case CAR: {
       word* p = (word*)s[sp]; 
       if (p == 0) 
@@ -823,6 +865,8 @@ int execcode(word p[], word s[], word iargs[], int iargc, int /* boolean */ trac
       printC(s[sp]); break;
     case PRINTL:
       printList(s[sp]); break;
+    case PRINTP:
+      printPair(s[sp]); break;
     case PRINTVAL:
       printVal(s[sp]); break;
     default:

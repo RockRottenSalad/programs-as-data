@@ -52,7 +52,7 @@ type answer =
 
 let rec ppValue = function
   | Int i -> sprintf "%d" i
-  | PairV(l, r) -> sprintf "(%s, %s)" (ppValue l) (ppValue r)
+  | PairV(l, r) -> sprintf "( %s , %s )" (ppValue l) (ppValue r)
   | List l -> let elems = List.map ppValue l
               "[" + (String.concat "," elems) + "] "
   | ClosureRef closRef ->
