@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="microsmlc">
+    <resource name="FSharpSignatureData.microsmlc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.microsmlc" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.microsmlc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.microsmlc" action="remove"></resource>
+    <resource name="FSharpOptimizationData.microsmlc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.microsmlc" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.microsmlc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.microsmlc" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.microsmlc" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.microsmlc" action="remove"></resource>
+  </assembly>
+</linker>
