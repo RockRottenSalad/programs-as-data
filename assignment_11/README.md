@@ -652,8 +652,8 @@ let ppInstr (addr,strs) instr =
 ## And now we test!
 
 Finally we can test that the example presented in the book works. Looking at
-the example below, `f` should call itself recursively twice and then it should
-call `g`, which should produce the output `(-1, 42)`.
+the example below, upon calling `f`, the function will call itself recursively
+once and then it should call `g`. This will produce the output `(-1, 42)`.
 
 ```sml
 val p = (1,43)
@@ -691,4 +691,9 @@ Number of GC: 0
 
 The only minor difference is that the result value is the pointer for the pair.
 This is due to how the `printStackVal` function is implemented in the VM.
+
+
+# Exercise 13.3
+
+
 
