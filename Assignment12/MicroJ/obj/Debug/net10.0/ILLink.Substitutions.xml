@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<linker>
+  <assembly fullname="microjc">
+    <resource name="FSharpSignatureData.microjc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedData.microjc" action="remove"></resource>
+    <resource name="FSharpSignatureDataB.microjc" action="remove"></resource>
+    <resource name="FSharpSignatureCompressedDataB.microjc" action="remove"></resource>
+    <resource name="FSharpOptimizationData.microjc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedData.microjc" action="remove"></resource>
+    <resource name="FSharpOptimizationDataB.microjc" action="remove"></resource>
+    <resource name="FSharpOptimizationCompressedDataB.microjc" action="remove"></resource>
+    <resource name="FSharpOptimizationInfo.microjc" action="remove"></resource>
+    <resource name="FSharpSignatureInfo.microjc" action="remove"></resource>
+  </assembly>
+</linker>
