@@ -163,13 +163,78 @@ and freevarsValdec (fvs, bvs) = function // bvs are bound variables, either glob
     let funFree =
       List.foldBack (fun (f,x,fBody,_) acc ->
                        (acc + (freevars fBody - fEnv - set [x]))) fs fvs
-    (funFree, bvs + fEnv)
+                        (funFree, bvs + fEnv)
     
+
 // Alpha conversion is implemented as an exercise.
 // Exampels ex11.sml, ex15.sml and ex16.sml do not work without alpha
 // conversion.
-let alphaConv p : program<'a,'b> = p
-
+let alphaConv p : program<'a,'b> =
+  let mutable varNo = 0
+  let getFreshVar (x: string) =
+    varNo <- varNo + 1
+    x + string(varNo)
+    
+  let rec lookup x =
+    function
+    | [] -> failwith "could not find variable " + x
+    | (y, v) :: xs -> if y = x then v else lookup x xs
+  
+  let rec aExpr env e =
+    match e with
+    | CstI _ | CstB _ | CstN _ -> e
+    | Var(s, opt) -> Var (lookup s env, opt)
+    | AndAlso(e1, e2, opt) -> AndAlso (aExpr env e1, aExpr env e2, opt)
+    | Pair(e1, e2, opt) -> Pair (aExpr env e1, aExpr env e2, opt)
+    | OrElse(e1, e2, opt) -> OrElse (aExpr env e1, aExpr env e2, opt)
+    | Seq(e1, e2, opt) -> Seq (aExpr env e1, aExpr env e2, opt)
+    | Prim2(op, e1, e2, opt) -> Prim2 (op, aExpr env e1, aExpr env e2, opt)
+    | Prim1(op, e1, opt) -> Prim1 (op, aExpr env e1, opt)
+    | If(guard, e1, e2) -> If (aExpr env guard, aExpr env e1, aExpr env e2)
+    | Fun(x, fbody, opt) ->
+      let x' = getFreshVar x
+      let env' = (x, x') :: env
+      Fun (x', aExpr env' fbody, opt)
+    | Call(e1, e2, bOpt, opt) -> Call (aExpr env e1, aExpr env e2, bOpt, opt)
+    | Let(valdecs, letBody) ->        
+      let (valdecs', env') = valdecshelper valdecs env
+      Let(valdecs', aExpr env' letBody)
+    | Raise(e1, opt) -> Raise (aExpr env e1, opt)
+    | TryWith(e1, exn, e2) -> TryWith (aExpr env e1, exn, aExpr env e2)
+  and aValdec' env = function
+    | Valdec(x,eRhs, opt) ->
+      let x' = getFreshVar x
+      let env' = (x, x') :: env
+      (Valdec (x', aExpr env eRhs, opt), env')
+    | Fundecs fundecs ->
+      //  Fundecs fs -> Fundecs(List.map (fun (f,x,e,bOpt) -> (f,x,tc' true e,bOpt)) fs)
+      // each mutual recursive function should get a new label
+      // afterwards we should make sure to process each of their bodies in the env where every one has been declared
+      let newFunctionNames = List.map (fun (f, _, _, _) -> (f, getFreshVar f)) fundecs
+      let env' = newFunctionNames @ env
+      
+      let map = List.zip fundecs newFunctionNames
+      let newDecs = map |> List.map (
+        fun ((_,x,e,bOpt), (_, f')) ->
+          let x' = getFreshVar x
+          let env'' = (x, x') :: env'
+          (f', x', aExpr env'' e, bOpt)
+        )
+      
+      Fundecs newDecs, env'
+    | Exndec exn -> (Exndec exn, env)
+  and aProg' = function
+    | Prog (valdecs,body) ->
+      let (valdecs', env') = valdecshelper valdecs []
+      Prog (valdecs', aExpr env' body)
+  and valdecshelper valdecs env =
+    match valdecs with
+    | [] -> ([], env)
+    | valdec :: xs ->
+      let (idk, env') = aValdec' env valdec
+      let (rest, env'') = valdecshelper xs env'
+      (idk :: rest, env'')
+  aProg' p
 
 
 
