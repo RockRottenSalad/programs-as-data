@@ -161,9 +161,8 @@ and freevarsValdec (fvs, bvs) = function // bvs are bound variables, either glob
   | Fundecs fs -> 
     let fEnv = Set.ofList (List.map (fun (f,_,_,_) -> f) fs) // fBody may recursively call f
     let funFree =
-      List.foldBack (fun (f,x,fBody,_) acc ->
-                       (acc + (freevars fBody - fEnv - set [x]))) fs fvs
-                        (funFree, bvs + fEnv)
+      List.foldBack (fun (f,x,fBody,_) acc -> (acc + (freevars fBody - fEnv - set [x]))) fs fvs
+    (funFree, bvs + fEnv)
     
 
 // Alpha conversion is implemented as an exercise.
