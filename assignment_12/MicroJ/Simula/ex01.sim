@@ -1,0 +1,28 @@
+% Example similar to ex01.java
+% B is subclass to A.
+% Notice, variable are case insensitive.
+
+begin
+  class A;
+  begin
+    integer i;
+  end;
+
+  A class B;
+  begin
+    integer i;
+  end;
+
+  ref(B) bb;   % bb has type B
+  ref(A) ba;   % ba has type A
+  
+  bb :- new B;
+  bb.i := 43;
+
+  ba :- bb;
+  ba.i := 42;
+
+  outint(ba.i, 5);   % 42
+  outint(bb.i, 5);   % 43  
+  outimage;
+end.

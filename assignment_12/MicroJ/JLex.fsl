@@ -1,0 +1,119 @@
+{
+ (* File microJ/Jlex.fsl 
+    Lexer for a Java like language (micro-Java)
+    sestoft@itu.dk, nh@itu.dk * 2025-05-18
+  *)
+
+module JLex
+
+open FSharp.Text.Lexing
+open JPar
+
+let lexemeAsString lexbuf = 
+    LexBuffer<char>.LexemeString lexbuf
+
+(* Distinguish keywords from identifiers: *)
+
+let keyword s =
+  match s with
+      "boolean" -> BOOL
+    | "class"   -> CLASS 
+    | "extends" -> EXTENDS
+    | "else"    -> ELSE
+    | "false"   -> CSTBOOL false
+    | "for"     -> FOR
+    | "if"      -> IF
+    | "int"     -> INT
+    | "string"  -> STRING
+    | "new"     -> NEW
+    | "null"    -> NULL
+    | "return"  -> RETURN
+    | "true"    -> CSTBOOL true
+    | "void"    -> VOID
+    | "while"   -> WHILE
+    | _         -> NAME s;
+
+(* Java escapes, see jls25, §3.10.7 *)
+let javaEscape s = 
+    match s with
+    | "\\b"  -> '\u0008'
+    | "\\s"  -> '\u0020'
+    | "\\t"  -> '\u0009'
+    | "\\n"  -> '\u000a'
+    | "\\f"  -> '\u000c'
+    | "\\r"  -> '\u000d'
+    | "\\\"" -> '\u0022'
+    | "\\\'" -> '\u0027'    
+    | "\\\\" -> '\u005c'
+    | _      -> failwith "Lexer error: impossible Java escape"
+}
+
+(* Force two characters for leading _, jls25 §3.8 - test ex77.java, exF62.java, exF63.java *)
+let digit = ['0'-'9']
+let letter = ['a'-'z' 'A'-'Z']
+let start = letter | '$'
+let trailing = letter | digit | '_' | '$'
+let identifier = start trailing* | '_' trailing+
+
+rule Token = parse
+  | [' ' '\t' '\r'] { Token lexbuf }
+  | '\n'            { lexbuf.EndPos <- lexbuf.EndPos.NextLine; Token lexbuf }
+  | ['0'-'9']+      { CSTINT (System.Int32.Parse (lexemeAsString lexbuf)) }
+  | identifier      { keyword (lexemeAsString lexbuf) }
+  | '+'             { PLUS }                     
+  | '-'             { MINUS }
+  | '*'             { TIMES }
+  | '/'             { DIV }
+  | '%'             { MOD }
+  | '='             { ASSIGN }
+  | "=="            { EQ }  
+  | "!="            { NE }
+  | '>'             { GT }
+  | '<'             { LT }
+  | ">="            { GE }  
+  | "<="            { LE }
+  | "||"            { SEQOR }
+  | "&&"            { SEQAND }
+  | '!'             { NOT }                     
+  | '('             { LPAR }
+  | ')'             { RPAR }
+  | '{'             { LBRACE }
+  | '}'             { RBRACE }
+  | ';'             { SEMICOLON }
+  | ','             { COMMA }
+  | '.'             { DOT }  
+  | "//"            { EndLineComment lexbuf; Token lexbuf }
+  | "/*"            { Comment lexbuf; Token lexbuf }  
+  | '"'             { CSTSTRING (String [] lexbuf) }
+  | eof             { EOF }
+  | _               { failwith "Lexer error: illegal symbol" }
+
+and Comment = parse
+   | "/*"           { Comment lexbuf; Comment lexbuf }
+   | "*/"           { () }
+   | '\n'           { lexbuf.EndPos <- lexbuf.EndPos.NextLine; Comment lexbuf }
+   | (eof | '\026') { failwith "Lexer error: unterminated comment" }
+   | _              { Comment lexbuf }
+
+and EndLineComment = parse
+   | '\n'           { lexbuf.EndPos <- lexbuf.EndPos.NextLine }
+   | (eof | '\026') { () }
+   | _              { EndLineComment lexbuf }
+
+and String chars = parse 
+  | '"'
+      { Microsoft.FSharp.Core.String.concat "" (List.map string (List.rev chars)) }
+  | '\\' ['\\' '"' 'a' 'b' 't' 'n' 'v' 'f' 'r']
+      { String (javaEscape (lexemeAsString lexbuf) :: chars) lexbuf }
+  | "''" 
+      { String ('\'' :: chars) lexbuf }
+  | '\\'
+      { failwith "Lexer error: illegal escape sequence" }
+  | (eof | '\026')
+      { failwith "Lexer error: unterminated string" }
+  | ['\n' '\r']
+      { failwith "Lexer error: newline in string" }
+  | ['\000'-'\031' '\127' '\255']
+      { failwith "Lexer error: invalid character in string" }
+  | _
+      { String (char (lexbuf.LexemeChar 0) :: chars) lexbuf }
