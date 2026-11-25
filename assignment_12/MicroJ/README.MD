@@ -60,5 +60,4 @@ le bad
 le bad
 >7. ( f , Object × S × U)
 
-
 le bad
