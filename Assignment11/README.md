@@ -85,7 +85,7 @@ If we have a `Var "x"` we naturally wan't to tranform it into the alpha converte
 ```
 If we have a function `fun x -> body`, then first we want to get a fresh name for the argument. Afterwards, we then want to alpha convert the body of the function in an environment, where `x` has been bound to the fresh variable.
 
-Before discussing `?, ?, ?` we have to discuss the implementation of `valdecshelper`:
+Before discussing `aValdecs` and `let` we have to discuss the implementation of `valdecshelper`:
 ```fsharp
   and valdecshelper valdecs env =
     match valdecs with

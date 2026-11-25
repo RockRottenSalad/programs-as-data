@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "cRDuTZVpS1M=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\aulh\\Desktop\\programs-as-data\\Assignment12\\MicroJ\\microjc.fsproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\aulh\\.nuget\\packages\\fsharp.core\\10.1.404\\fsharp.core.10.1.404.nupkg.sha512",
+    "C:\\Users\\aulh\\.nuget\\packages\\fslexyacc\\11.3.0\\fslexyacc.11.3.0.nupkg.sha512",
+    "C:\\Users\\aulh\\.nuget\\packages\\fslexyacc.runtime\\11.3.0\\fslexyacc.runtime.11.3.0.nupkg.sha512"
+  ],
+  "logs": []
+}
