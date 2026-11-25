@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/MicroJ/">
+    <Project Path="MicroJ/microjc.fsproj" />
+  </Folder>
+</Solution>

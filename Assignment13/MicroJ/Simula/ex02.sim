@@ -1,0 +1,77 @@
+% Example similar to ex02.java
+% B is subclass to A.
+% Notice, variable are case insensitive.
+
+begin
+  class A;
+  begin
+    integer i1;
+    integer i2;
+
+    integer procedure f;
+    BEGIN
+      f := i1 + i2;
+    end;
+       
+  end;
+
+  A class B;
+  begin
+    integer i2;
+
+    % It is not possible to directly access procedures in super class.
+    % So this is procedure f in class B - not A.
+    integer procedure fSuper;
+    begin
+      fSuper := f;
+    end;
+    
+    integer procedure f;
+    BEGIN
+      f := i2;
+    end;
+    
+    integer procedure i2Super;
+    begin
+      i2Super := i2;
+    end;
+
+    integer procedure g;
+    begin
+      g := i1 + i2;
+    end;
+
+  end;
+
+  ref(A) aa;   % aa has type A, runtime object A
+  ref(B) bb;   % bb has type B, runtime object B
+  ref(A) ab;   % ab has type A, runtime object B.
+     
+  aa :- new A;
+  aa.i1 := 1;
+  aa.i2 := 2;
+
+  bb :- new B;
+  bb.i1 := 4;
+  bb.i2 := 42;
+
+  ab :- bb;
+
+  outint(aa.i1, 5);   % 1
+  outint(aa.i2, 5);   % 2
+  outint(aa.f, 5);    % 3
+  outimage;
+  
+  outint(bb.i1, 5);      % 4
+  outint(bb.i2, 5);      % 42
+  outint(bb.f, 5);       % 42
+  outint(bb.i2Super, 5); % 42 - Different from ex01.java.
+  outint(bb.fSuper, 5);  % 42 - Different from ex01.java.     
+  outint(bb.g, 5);       % 46
+  outimage;
+
+  outint(ab.i1, 5);       % 4
+  outint(ab.i2, 5);       % 0
+  outint(ab.f, 5);        % 4 - Different from ex01.java - it is A.f that is called.
+  outimage;  
+end.

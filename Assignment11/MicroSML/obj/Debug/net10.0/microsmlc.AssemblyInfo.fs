@@ -10,7 +10,7 @@ open System.Reflection
 [<assembly: System.Reflection.AssemblyCompanyAttribute("microsmlc")>]
 [<assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")>]
 [<assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")>]
-[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+18ea23f16000b214a25abd7bb724be7217563e94")>]
+[<assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a85faae04d6743b7a9a4fa27019b3e40e64a126c")>]
 [<assembly: System.Reflection.AssemblyProductAttribute("microsmlc")>]
 [<assembly: System.Reflection.AssemblyTitleAttribute("microsmlc")>]
 [<assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")>]
