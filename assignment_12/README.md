@@ -102,82 +102,56 @@ False.
 `Object <- S <- T <- H`
 
 # Exercise 1.4
-
-> In this exercise we consider the concept of most specific method signature, see Sect. 1.4.3.
-
-> We solve the exercise assuming this class hierarchy:
+> In this exercise we consider the concept of most specific method sig-
+> nature, see Sect. 1.4.3. We solve the exercise assuming this class hierarchy:
+> ```
 > Object <- Main
 > <- U <- V
 > <- S <- T <- H
+> ```
+> Consider the method environment below (Ψ):
+> - `( f , Object × U × S) : Object × U × S → T`
+> - `( f , U × Object × S) : U × Object × S → S`
+> - `( f , V × Object × T) : V × Object × T → S`
+> - `( f , U × U × S) : U × U × S → S`
+> 
+> For each actual method signature below, explain whether a most specific method
+    signature exists in Ψ .
 
+1. `( f , U × Object × S)`
+    
+    There exists a most specific signature in Ψ, namely `( f , U × Object × S) : U × Object × S → S`.
+2. `( f , U × U × S)`
 
-> Consider the method environment Ψ below:
-> • ( f , Object × U × S) : Object × U × S → T
-> • ( f , U × Object × S) : U × Object × S → S
-> • ( f , V × Object × T) : V × Object × T → S
-> • ( f , U × U × S) : U × U × S → S
+    There exists a most specific signature, namely `( f , U × U × S) : U × U × S → S`.
 
-> For each actual method signature below, explain whether a most specific method signature exists in Ψ .
+3. `( f , U × Object × T)`
 
-1. ( f , U × Object × S)
+    There exists a most specific function, namely `( f , U × Object × S) : U × Object × S → S`. This is valid, since `T <: S`, so we can use `T` in place of `S`.
+    
+    One could think that there are two other possible functions, but these are invalid, since they give an argument that is less specific that the expected argument.
 
-There exists such a function.
+4. `( f , V × V × H)`
+    
+    There is no most specific functions.
 
-The following function is a 1:1 match:
+    There are to functions that possibly could match:
+    - `( f , U × U × S)` 
+    - `( f , V × Object × T)`
+   
+    The issue is, that for both these it does not hold that all the arguments are more specific that the other arguments, i.e. while it is the case that `U` is less specific that `V`, `U` is more specific than `Object`.
 
- • ( f , U × Object × S) : U × Object × S → S
+5. `( f , null × null × null)`
 
+    Since `null` is a subtype is of all objects, it means that all the signatures potentially match.
+    And there is no most specific one.
 
-2. ( f , U × U × S)
+6. `( f , Object × Object × Object)`
+    
+    This is not an example of where there isnt a specific function, but an error where no signature actually matches the arguments. We can't give a less specific object, when we expect a more specific one. All the posible signatures expect some subtype of `Object` at some point, which means that they all reject this output.
 
-There exists such a function.
+7. `( f , Object × S × U)`
 
-The following function is a 1:1 match:
-
- • ( f , U × U × S) : U × U × S → S
-
-3. ( f , U × Object × T)
-
-There does not exist such a function.
-
-Recall that `T` is a sub-type of `S`.
-
-So this function matches.
-
-• ( f , U × Object × S) : U × Object × S → S
-
-4. ( f , V × V × H)
-
-There does not exist such a function.
-
-
-There are two functions which have signatures that match. However, looking at
-the distance of each argument to the types given in the function call, we can
-see that neither of the signatures is closer to the given signature than the
-other.
-
-Hence, there is no obvious function to call here.
-
-1, 1, 2
-• ( f , U × U × S) : U × U × S → S
-
-0, 2, 1
-• ( f , V × Object × T) : V × Object × T → S
-
-5. ( f , null × null × null)
-
-There does not exist such a function.
-This could refer to literally any of the 4 functions.
-
-6. ( f , Object × Object × Object)
-
-There does not exist such a function.
-
-None of the signatures match since `Object` is too generic with all of the signatures.
-
-7. ( f , Object × S × U)
-
-There does not exist such a function.
-
-This simply doesn't match any of the signatures.
+    There is no most specific function, since there is no signature that matches the call.
+    The only possible candidate would be `(f, Object x U x S)`, but `S` is not a subtype of `U`, so it does not match.
 
